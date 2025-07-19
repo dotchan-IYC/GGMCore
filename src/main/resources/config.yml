@@ -1,0 +1,137 @@
+# GGMCore 플러그인 설정 파일
+
+# 데이터베이스 설정
+database:
+  host: "localhost"
+  port: 3306
+  database: "ggm_server"
+  username: "root"
+  password: "1224"
+
+# G 시스템 설정
+economy:
+  # 송금 수수료 (10% = 0.1)
+  transfer_fee: 0.1
+  # 신규 플레이어 시작 G
+  starting_money: 1000
+  # 최대 송금 가능 금액
+  max_transfer: 1000000
+
+# 크로스 서버 인벤토리 동기화 설정
+inventory_sync:
+  enabled: true                    # 인벤토리 동기화 사용 여부
+  save_on_quit: true              # 서버 퇴장 시 자동 저장
+  load_on_join: true              # 서버 접속 시 자동 로드
+  load_delay: 20                  # 로드 지연 시간 (틱, 20 = 1초)
+  sync_health: true               # 체력 동기화
+  sync_hunger: true               # 배고픔 동기화
+  sync_experience: true           # 경험치 동기화
+  backup_on_save: false           # 저장 시 백업 생성 (개발용)
+
+# 커스텀 인첸트 설정
+custom_enchants:
+  lightning:
+    base_chance: 5        # 기본 확률 5%
+    chance_per_level: 5   # 레벨당 +5%
+    max_chance: 25        # 최대 확률 25%
+
+  auto_repair:
+    base_chance: 3        # 기본 확률 3%
+    chance_per_level: 3   # 레벨당 +3%
+    max_chance: 15        # 최대 확률 15%
+
+  vampire:
+    heal_percentage: 10   # 피해량의 10%
+    heal_per_level: 10    # 레벨당 +10%
+
+  exp_boost:
+    base_exp: 2           # 기본 경험치 +2
+    exp_per_level: 2      # 레벨당 +2
+
+# 인첸트북 설정
+enchant_books:
+  # 각 등급별 인첸트 풀 (바닐라 + 커스텀)
+  common:
+    - "DURABILITY:1"
+    - "EFFICIENCY:1"
+    - "UNBREAKING:1"
+    - "SHARPNESS:1"
+    - "PROTECTION:1"
+    - "CUSTOM:auto_repair:1"        # 커스텀: 자동수리 1레벨 (20% 확률)
+    - "CUSTOM:vampire:1"            # 커스텀: 흡혈 1레벨 (추가)
+  rare:
+    - "EFFICIENCY:2"
+    - "UNBREAKING:2"
+    - "SHARPNESS:2"
+    - "PROTECTION:2"
+    - "FIRE_PROTECTION:1"
+    - "PROJECTILE_PROTECTION:1"
+    - "CUSTOM:vampire:1"            # 커스텀: 흡혈 1레벨 (25% 확률)
+    - "CUSTOM:exp_boost:1"          # 커스텀: 경험증폭 1레벨 (25% 확률)
+    - "CUSTOM:lightning:1"          # 커스텀: 번개 1레벨 (추가)
+  epic:
+    - "EFFICIENCY:3"
+    - "UNBREAKING:3"
+    - "SHARPNESS:3"
+    - "PROTECTION:3"
+    - "FIRE_PROTECTION:2"
+    - "PROJECTILE_PROTECTION:2"
+    - "FORTUNE:1"
+    - "LOOTING:1"
+    - "CUSTOM:lightning:1"          # 커스텀: 번개 1레벨 (30% 확률)
+    - "CUSTOM:high_jump:1"          # 커스텀: 점프 1레벨 (30% 확률)
+    - "CUSTOM:vampire:2"            # 커스텀: 흡혈 2레벨 (30% 확률)
+  ultimate:
+    - "EFFICIENCY:4"
+    - "UNBREAKING:3"
+    - "SHARPNESS:4"
+    - "PROTECTION:4"
+    - "FIRE_PROTECTION:3"
+    - "PROJECTILE_PROTECTION:3"
+    - "FORTUNE:2"
+    - "LOOTING:2"
+    - "MENDING:1"
+    - "CUSTOM:lightning:2"          # 커스텀: 번개 2레벨 (50% 확률)
+    - "CUSTOM:vampire:3"            # 커스텀: 흡혈 3레벨 (50% 확률)
+    - "CUSTOM:auto_repair:2"        # 커스텀: 자동수리 2레벨 (50% 확률)
+    - "CUSTOM:exp_boost:2"          # 커스텀: 경험증폭 2레벨 (50% 확률)
+
+# 메시지 설정
+messages:
+  prefix: "§6[GGM] §f"
+  no_permission: "§c권한이 없습니다."
+  player_not_found: "§c플레이어를 찾을 수 없습니다."
+  invalid_amount: "§c올바른 금액을 입력해주세요."
+  insufficient_funds: "§cG가 부족합니다."
+  transfer_success: "§a{player}님에게 {amount}G를 송금했습니다. (수수료: {fee}G)"
+  receive_money: "§a{player}님으로부터 {amount}G를 받았습니다."
+  balance: "§e현재 잔액: §6{balance}G"
+  enchant_restricted: "§c인첸트가 제한되어 있습니다!"
+  use_ggm_books: "§7GGM 인첸트북만 사용 가능합니다."
+
+# 스코어보드 설정
+scoreboard:
+  enabled: true
+  # server_name은 포트 기반으로 자동 감지됩니다!
+  # 25565 →로비
+  # 25566 →건축
+  # 25567 →야생
+  # 25568 →마을
+  update_interval: 100            # 시간 업데이트 간격 (틱 단위, 100 = 5초, 깜빡임 방지)
+  smooth_update: true             # 부분 업데이트 사용 (깜빡임 방지)
+
+# 서버 설정 (포트로 자동 감지되지 않는 경우에만 사용)
+server:
+  type: "unknown"                 # lobby, build, survival, village 중 하나
+  display_name: "알 수 없음"        # 스코어보드에 표시될 이름
+
+# 인첸트 제한 설정
+enchant_restrictions:
+  enabled: true                   # 모든 서버에서 활성화
+  block_enchant_books: true       # 일반 인첸트북 사용 차단
+  block_enchant_table: true       # 인첸트 테이블 사용 차단 (야생 서버 자동 제외)
+  block_book_drops: true          # 인첸트북 드롭 차단
+  allow_ggm_books: true           # GGM 인첸트북만 허용
+
+  # allow_enchant_table_on_survival 설정은 더 이상 필요 없습니다!
+  # 포트 기반으로 야생 서버(25567)를 자동 감지하여 인첸트 테이블을 허용합니다.

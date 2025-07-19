@@ -1,0 +1,99 @@
+name: GGMCore
+version: '1.0.0'
+main: com.ggm.core.GGMCore
+api-version: 1.20
+authors: [ DotC ]
+description: GGM 서버 통합 플러그인
+
+commands:
+  pay:
+    description: 다른 플레이어에게 G를 송금합니다 (10% 수수료)
+    usage: /pay <플레이어> <금액>
+    permission: ggm.pay
+  oppay:
+    description: OP 전용 무제한 송금
+    usage: /oppay <플레이어> <금액>
+    permission: ggm.oppay
+  takemoney:
+    description: OP 전용 G 몰수
+    usage: /takemoney <플레이어> <금액>
+    permission: ggm.takemoney
+  openinven:
+    description: OP 전용 인벤토리 열기
+    usage: /openinven <플레이어>
+    permission: ggm.openinven
+  givebook:
+    description: OP 전용 랜덤 인첸트북 지급
+    usage: /givebook <common|rare|epic|ultimate>
+    permission: ggm.givebook
+  g:
+    description: 내 G 잔액 확인
+    usage: /g
+    permission: ggm.balance
+  sb:
+    description: 스코어보드 토글
+    usage: /sb
+    aliases: [scoreboard]
+    permission: ggm.scoreboard
+  ggmreload:
+    description: GGM 설정 리로드
+    usage: /ggmreload
+    aliases: [ggm-reload]
+    permission: ggm.reload
+  actionbar:
+    description: ActionBar 실시간 정보 토글
+    usage: /actionbar
+    aliases: [ab]
+    permission: ggm.actionbar
+  enchantconfig:
+    description: 커스텀 인첸트 확률 설정
+    usage: /enchantconfig
+    aliases: [ec, enchant-config]
+    permission: ggm.enchantconfig
+  test:
+    description: 커스텀 인첸트 테스트 명령어
+    usage: /test
+    permission: ggm.test
+  inventory:
+    description: 크로스 서버 인벤토리 관리
+    usage: /inventory
+    aliases: [inv]
+    permission: ggm.inventory
+
+permissions:
+  ggm.pay:
+    description: 송금 명령어 사용
+    default: true
+  ggm.balance:
+    description: 잔액 확인
+    default: true
+  ggm.scoreboard:
+    description: 스코어보드 토글
+    default: true
+  ggm.reload:
+    description: 설정 리로드
+    default: op
+  ggm.actionbar:
+    description: ActionBar 토글
+    default: true
+  ggm.enchantconfig:
+    description: 커스텀 인첸트 설정 변경
+    default: op
+  ggm.test:
+    description: 테스트 명령어 사용
+    default: op
+  ggm.inventory:
+    description: 인벤토리 관리 명령어
+    default: op
+  ggm.oppay:
+    description: OP 송금 명령어
+    default: op
+  ggm.takemoney:
+    description: OP 몰수 명령어
+    default: op
+  ggm.openinven:
+    description: OP 인벤토리 명령어
+    default: op
+  ggm.givebook:
+    description: OP 인첸트북 지급 명령어
+    default: op
