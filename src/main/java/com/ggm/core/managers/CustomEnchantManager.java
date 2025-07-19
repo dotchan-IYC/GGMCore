@@ -292,7 +292,7 @@ public class CustomEnchantManager implements Listener {
             }
         }
 
-        player.sendMessage("§2🌳 벌목꾼 발동! " + treeLogs.size() + "개 블록 제거");
+        player.sendMessage("§2벌목꾼 발동! " + treeLogs.size() + "개 블록 제거");
 
         // 시각 효과
         startBlock.getWorld().spawnParticle(Particle.VILLAGER_HAPPY,
@@ -323,7 +323,7 @@ public class CustomEnchantManager implements Listener {
             int chance = getLightningChance(lightningLevel);
             if (random.nextInt(100) < chance) {
                 event.getEntity().getWorld().strikeLightning(event.getEntity().getLocation());
-                player.sendMessage("§e⚡ 번개가 적을 강타했습니다!");
+                player.sendMessage("§e번개가 적을 강타했습니다!");
             }
         }
 
@@ -334,7 +334,7 @@ public class CustomEnchantManager implements Listener {
             livingTarget.addPotionEffect(new PotionEffect(PotionEffectType.POISON, 100 + (poisonLevel * 20), poisonLevel - 1));
 
             target.getWorld().spawnParticle(Particle.SLIME, target.getLocation().add(0, 1, 0), 10);
-            player.sendMessage("§2🐍 독날 발동!");
+            player.sendMessage("§2독날 발동!");
         }
 
         // 빙결
@@ -346,7 +346,7 @@ public class CustomEnchantManager implements Listener {
 
             target.getWorld().spawnParticle(Particle.SNOWBALL, target.getLocation().add(0, 1, 0), 15);
             target.getWorld().playSound(target.getLocation(), Sound.BLOCK_GLASS_BREAK, 1.0f, 2.0f);
-            player.sendMessage("§b❄️ 빙결 발동!");
+            player.sendMessage("§b빙결 발동!");
         }
 
         // 경험증폭 (몹 처치 시)
@@ -356,7 +356,7 @@ public class CustomEnchantManager implements Listener {
             if (livingEntity.getHealth() - event.getDamage() <= 0) {
                 int bonusExp = getExpBoostAmount(expLevel);
                 player.giveExp(bonusExp);
-                player.sendMessage("§d✨ 추가 경험치 +" + bonusExp);
+                player.sendMessage("§d추가 경험치 +" + bonusExp);
             }
         }
     }

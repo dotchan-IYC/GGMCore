@@ -207,21 +207,68 @@ public class AnvilEnchantManager implements Listener {
         boolean success = new Random().nextInt(100) < successChance;
 
         if (!success) {
-            // 실패 시
-            player.sendMessage("§c💥 인첸트 적용에 실패했습니다! (" + successChance + "% 확률)");
-            player.sendMessage("§7아이템과 인첸트북이 모두 사라졌습니다...");
+            // 실패 시 - 파괴방지권 확인
+            ItemStack targetItem = anvil.getItem(0);
+            ItemStack enchantBook = anvil.getItem(1);
 
-            // 경험치는 절반만 소모
-            player.setLevel(player.getLevel() - (requiredLevels / 2));
+            boolean hasProtection = plugin.getProtectionScrollManager().hasProtection(targetItem);
+            String protectionType = plugin.getProtectionScrollManager().getItemProtectionType(targetItem);
 
-            // 아이템들 제거
-            anvil.setItem(0, null);
-            anvil.setItem(1, null);
+            if (hasProtection) {
+                // 파괴방지권이 있는 경우
+                player.sendMessage("§c인첸트 적용에 실패했습니다! (" + successChance + "% 확률)");
 
-            // 실패 효과
-            player.getWorld().playSound(player.getLocation(), Sound.BLOCK_ANVIL_BREAK, 1.0f, 0.5f);
-            player.getWorld().spawnParticle(org.bukkit.Particle.SMOKE_LARGE,
-                    player.getLocation().add(0, 1, 0), 20);
+                if ("premium".equals(protectionType)) {
+                    // 프리미엄: 무기 + 인첸트북 모두 보호
+                    player.sendMessage("§6프리미엄 파괴방지권으로 무기와 인첸트북이 보호되었습니다!");
+                    player.sendMessage("§b완벽한 보호! §7경험치 " + requiredLevels + "레벨만 소모되었습니다.");
+
+                    // 파괴방지권만 소모
+                    plugin.getProtectionScrollManager().consumeProtection(targetItem);
+
+                    // 아이템들은 그대로 유지, 결과만 제거
+                    anvil.setItem(2, null);
+
+                } else {
+                    // 기본: 무기만 보호, 인첸트북은 소모
+                    player.sendMessage("§a기본 파괴방지권으로 무기가 보호되었습니다!");
+                    player.sendMessage("§7인첸트북과 경험치 " + requiredLevels + "레벨이 소모되었습니다.");
+
+                    // 파괴방지권 소모
+                    plugin.getProtectionScrollManager().consumeProtection(targetItem);
+
+                    // 인첸트북만 제거, 무기는 보호
+                    anvil.setItem(1, null);  // 인첸트북 제거
+                    anvil.setItem(2, null);  // 결과 제거
+                }
+
+                // 경험치 소모
+                player.setLevel(player.getLevel() - requiredLevels);
+
+                // 보호 효과
+                player.getWorld().playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 1.2f);
+                player.getWorld().spawnParticle(org.bukkit.Particle.TOTEM,
+                        player.getLocation().add(0, 1, 0), 30);
+
+            } else {
+                // 파괴방지권이 없는 경우 (기존 로직)
+                player.sendMessage("§c인첸트 적용에 실패했습니다! (" + successChance + "% 확률)");
+                player.sendMessage("§7아이템과 인첸트북이 모두 사라졌습니다...");
+                player.sendMessage("§e팁: 파괴방지권을 사용하면 실패 시 아이템을 보호할 수 있습니다!");
+
+                // 경험치는 절반만 소모
+                player.setLevel(player.getLevel() - (requiredLevels / 2));
+
+                // 모든 아이템 제거
+                anvil.setItem(0, null);  // 대상 아이템
+                anvil.setItem(1, null);  // 인첸트북
+                anvil.setItem(2, null);  // 결과 아이템
+
+                // 실패 효과
+                player.getWorld().playSound(player.getLocation(), Sound.BLOCK_ANVIL_BREAK, 1.0f, 0.5f);
+                player.getWorld().spawnParticle(org.bukkit.Particle.SMOKE_LARGE,
+                        player.getLocation().add(0, 1, 0), 20);
+            }
 
             event.setCancelled(true);
             return;
@@ -236,13 +283,24 @@ public class AnvilEnchantManager implements Listener {
         resultMeta.getPersistentDataContainer().remove(levelKey);
         result.setItemMeta(resultMeta);
 
-        // 원본 아이템들 제거
-        anvil.setItem(0, null);
-        anvil.setItem(1, null);
+        // 인벤토리 공간 확인 후 아이템 지급
+        if (player.getInventory().firstEmpty() == -1) {
+            // 인벤토리가 가득 찬 경우 땅에 드롭
+            player.getWorld().dropItemNaturally(player.getLocation(), result);
+            player.sendMessage("§7인벤토리가 가득 차서 아이템을 땅에 떨어뜨렸습니다.");
+        } else {
+            // 인벤토리에 아이템 추가
+            player.getInventory().addItem(result);
+        }
+
+        // 모루에서 원본 아이템들과 결과 아이템 제거
+        anvil.setItem(0, null);  // 대상 아이템
+        anvil.setItem(1, null);  // 인첸트북
+        anvil.setItem(2, null);  // 결과 아이템
 
         // 성공 메시지 및 효과
         String enchantName = getEnchantDisplayName(enchantId);
-        player.sendMessage("§a✨ 인첸트 적용 성공! " + enchantName + " " + enchantLevel + "레벨");
+        player.sendMessage("§a인첸트 적용 성공! " + enchantName + " " + enchantLevel + "레벨");
         player.sendMessage("§7경험치 " + requiredLevels + "레벨을 소모했습니다.");
 
         // 성공 효과
@@ -253,6 +311,9 @@ public class AnvilEnchantManager implements Listener {
         // 로그 기록
         plugin.getLogger().info(String.format("[모루인첸트] %s: %s %d레벨 적용 성공 (비용: %d레벨)",
                 player.getName(), enchantId, enchantLevel, requiredLevels));
+
+        // 이벤트 취소 (우리가 수동으로 아이템을 관리)
+        event.setCancelled(true);
     }
 
     /**

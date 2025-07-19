@@ -17,6 +17,7 @@ public class GGMCore extends JavaPlugin {
     private EnchantRestrictionManager enchantRestrictionManager;
     private CustomEnchantManager customEnchantManager;
     private AnvilEnchantManager anvilEnchantManager; // 새로 추가
+    private ProtectionScrollManager protectionScrollManager; // 파괴방지권 매니저 추가
     private InventoryManager inventoryManager; // null일 수 있음
     private ScoreboardManager scoreboardManager;
 
@@ -88,6 +89,10 @@ public class GGMCore extends JavaPlugin {
             customEnchantManager = new CustomEnchantManager(this);
             getLogger().info("커스텀 인첸트 매니저 초기화 완료 (" +
                     customEnchantManager.getCustomEnchants().size() + "개 인첸트)");
+
+            // 파괴방지권 매니저 초기화 (새로 추가)
+            protectionScrollManager = new ProtectionScrollManager(this);
+            getLogger().info("파괴방지권 시스템 초기화 완료");
 
             // 모루 인첸트 매니저 초기화 (새로 추가)
             if (getConfig().getBoolean("anvil_enchanting.enabled", true)) {
@@ -191,6 +196,9 @@ public class GGMCore extends JavaPlugin {
             // 커스텀 인첸트 리스너
             getServer().getPluginManager().registerEvents(customEnchantManager, this);
 
+            // 파괴방지권 리스너 (새로 추가)
+            getServer().getPluginManager().registerEvents(protectionScrollManager, this);
+
             // 모루 인첸트 적용 리스너 (새로 추가)
             if (anvilEnchantManager != null) {
                 getServer().getPluginManager().registerEvents(anvilEnchantManager, this);
@@ -244,6 +252,13 @@ public class GGMCore extends JavaPlugin {
      */
     public AnvilEnchantManager getAnvilEnchantManager() {
         return anvilEnchantManager;
+    }
+
+    /**
+     * 파괴방지권 매니저
+     */
+    public ProtectionScrollManager getProtectionScrollManager() {
+        return protectionScrollManager;
     }
 
     /**

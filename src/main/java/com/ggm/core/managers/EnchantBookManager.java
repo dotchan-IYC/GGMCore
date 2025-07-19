@@ -182,7 +182,7 @@ public class EnchantBookManager {
             lore.add("§7등급: " + getTierColor(tier) + tier.toUpperCase());
             lore.add("§7커스텀: " + enchantDisplayName + " " + level);
             lore.add("§7효과: §f" + getCustomEnchantDescription(customEnchantId));
-            lore.add("§8§l[GGM 인첸트북]");  // ← 통일된 태그 사용
+            lore.add("§8§l[GGM 인첸트북]");
             meta.setLore(lore);
 
             enchantBook.setItemMeta(meta);
@@ -198,7 +198,7 @@ public class EnchantBookManager {
     }
 
     /**
-     * 커스텀 인첸트 표시 이름 가져오기
+     * 커스텀 인첸트 표시 이름 가져오기 (업데이트됨)
      */
     private String getCustomEnchantDisplayName(String enchantId) {
         return switch (enchantId.toLowerCase()) {
@@ -207,12 +207,27 @@ public class EnchantBookManager {
             case "auto_repair" -> "§b자동수리";
             case "exp_boost" -> "§d경험증폭";
             case "high_jump" -> "§a점프";
+            case "explosive_arrow" -> "§4폭발화살";
+            case "piercing_shot" -> "§7관통사격";
+            case "auto_smelt" -> "§6자동제련";
+            case "area_mining" -> "§8광역채굴";
+            case "vein_miner" -> "§9광맥채굴";
+            case "tree_feller" -> "§2벌목꾼";
+            case "poison_blade" -> "§2독날";
+            case "freeze" -> "§b빙결";
+            case "soul_reaper" -> "§0영혼수확";
+            case "life_steal" -> "§4생명흡수";
+            case "berserker" -> "§c광전사";
+            case "spider_walk" -> "§8거미보행";
+            case "water_walker" -> "§9물위걷기";
+            case "regeneration" -> "§d재생";
+            case "immunity" -> "§f면역";
             default -> "§7" + enchantId;
         };
     }
 
     /**
-     * 커스텀 인첸트 설명 가져오기
+     * 커스텀 인첸트 설명 가져오기 (업데이트됨)
      */
     private String getCustomEnchantDescription(String enchantId) {
         return switch (enchantId.toLowerCase()) {
@@ -221,6 +236,21 @@ public class EnchantBookManager {
             case "auto_repair" -> "블록 채굴 시 확률적으로 내구도 회복";
             case "exp_boost" -> "몹 처치 시 추가 경험치 획득";
             case "high_jump" -> "착용 시 점프력 증가";
+            case "explosive_arrow" -> "발사한 화살이 폭발하여 광역 피해";
+            case "piercing_shot" -> "화살이 여러 적을 관통";
+            case "auto_smelt" -> "채굴한 광물이 자동으로 제련됨";
+            case "area_mining" -> "3x3 영역을 한 번에 채굴";
+            case "vein_miner" -> "같은 종류 블록을 연쇄적으로 채굴";
+            case "tree_feller" -> "나무를 한 번에 베어냄";
+            case "poison_blade" -> "공격 시 독 효과 부여";
+            case "freeze" -> "공격 시 적을 얼려서 이동 불가";
+            case "soul_reaper" -> "적 처치 시 주변 몹들에게 피해";
+            case "life_steal" -> "적 처치 시 최대 체력 증가";
+            case "berserker" -> "체력이 낮을수록 공격력 증가";
+            case "spider_walk" -> "벽면을 기어올라갈 수 있음";
+            case "water_walker" -> "물 위를 걸을 수 있음";
+            case "regeneration" -> "시간이 지나면서 체력 회복";
+            case "immunity" -> "모든 상태이상 무효";
             default -> "알 수 없는 효과";
         };
     }
