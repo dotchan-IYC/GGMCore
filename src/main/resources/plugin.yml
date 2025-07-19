@@ -59,6 +59,11 @@ commands:
     usage: /inventory
     aliases: [inv]
     permission: ggm.inventory
+  ggmreset:
+    description: 플레이어 데이터 완전 초기화
+    usage: /ggmreset <플레이어> [all|inventory|economy]
+    aliases: [reset-player, playerreset]
+    permission: ggm.reset
 
 permissions:
   ggm.pay:
@@ -96,4 +101,7 @@ permissions:
     default: op
   ggm.givebook:
     description: OP 인첸트북 지급 명령어
+    default: op
+  ggm.reset:
+    description: 플레이어 데이터 초기화 권한
     default: op

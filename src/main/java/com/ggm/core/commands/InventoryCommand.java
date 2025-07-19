@@ -75,6 +75,31 @@ public class InventoryCommand implements CommandExecutor {
                 showInventoryInfo(sender, args[1]);
                 break;
 
+            // 새로 추가된 디버그 명령어들
+            case "debug":
+                if (args.length < 2) {
+                    sender.sendMessage("§c사용법: /inventory debug <플레이어>");
+                    return true;
+                }
+                debugInventoryStatus(sender, args[1]);
+                break;
+
+            case "force-save":
+                if (args.length < 2) {
+                    sender.sendMessage("§c사용법: /inventory force-save <플레이어>");
+                    return true;
+                }
+                forceSaveInventory(sender, args[1]);
+                break;
+
+            case "force-load":
+                if (args.length < 2) {
+                    sender.sendMessage("§c사용법: /inventory force-load <플레이어>");
+                    return true;
+                }
+                forceLoadInventory(sender, args[1]);
+                break;
+
             default:
                 sendHelp(sender);
                 break;
@@ -90,14 +115,17 @@ public class InventoryCommand implements CommandExecutor {
         sender.sendMessage("§7/inventory load <플레이어> - 플레이어 인벤토리 로드");
         sender.sendMessage("§7/inventory reset <플레이어> - 플레이어 인벤토리 초기화");
         sender.sendMessage("§7/inventory info <플레이어> - 플레이어 인벤토리 정보");
+        sender.sendMessage("§e=== 디버그 명령어 ===");
+        sender.sendMessage("§7/inventory debug <플레이어> - DB 상태 확인");
+        sender.sendMessage("§7/inventory force-save <플레이어> - 강제 저장");
+        sender.sendMessage("§7/inventory force-load <플레이어> - 강제 로드");
         sender.sendMessage("§6==========================");
     }
 
+    // 기존 메소드들...
     private void syncInventory(Player player) {
         player.sendMessage("§e인벤토리 동기화를 시작합니다...");
-
         inventoryManager.forceSyncInventory(player);
-
         plugin.getLogger().info(String.format("[인벤토리] %s이(가) 강제 동기화를 실행했습니다.",
                 player.getName()));
     }
@@ -157,13 +185,11 @@ public class InventoryCommand implements CommandExecutor {
 
         sender.sendMessage("§e" + targetName + "의 인벤토리를 초기화 중...");
 
-        // UUID 파싱
         UUID targetUuid = targetPlayer.getUniqueId();
 
         inventoryManager.deletePlayerInventory(targetUuid)
                 .thenAccept(success -> {
                     if (success) {
-                        // 메인 스레드에서 인벤토리 클리어
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             targetPlayer.getInventory().clear();
                             targetPlayer.getInventory().setArmorContents(null);
@@ -193,13 +219,11 @@ public class InventoryCommand implements CommandExecutor {
             return;
         }
 
-        // 현재 인벤토리 정보 표시
         sender.sendMessage("§6=== " + targetName + " 인벤토리 정보 ===");
         sender.sendMessage("§7현재 서버: §f" + plugin.getServerDetector().getDisplayName());
 
-        // 아이템 개수 계산
         int itemCount = 0;
-        for (int i = 0; i < 36; i++) { // 일반 인벤토리만
+        for (int i = 0; i < 36; i++) {
             if (targetPlayer.getInventory().getItem(i) != null) {
                 itemCount++;
             }
@@ -218,5 +242,97 @@ public class InventoryCommand implements CommandExecutor {
         sender.sendMessage("§7배고픔: §f" + targetPlayer.getFoodLevel() + "/20");
         sender.sendMessage("§7경험치 레벨: §f" + targetPlayer.getLevel());
         sender.sendMessage("§6=============================");
+    }
+
+    // 새로 추가된 디버그 메소드들
+    private void debugInventoryStatus(CommandSender sender, String targetName) {
+        Player targetPlayer = Bukkit.getPlayer(targetName);
+
+        if (targetPlayer == null) {
+            sender.sendMessage("§c플레이어를 찾을 수 없습니다: " + targetName);
+            return;
+        }
+
+        sender.sendMessage("§6=== " + targetName + " 디버그 정보 ===");
+        sender.sendMessage("§7플레이어 UUID: §f" + targetPlayer.getUniqueId());
+        sender.sendMessage("§7현재 서버: §f" + plugin.getServerDetector().getDisplayName());
+        sender.sendMessage("§7인벤토리 동기화: §f" + (plugin.isInventorySyncEnabled() ? "§a활성화" : "§c비활성화"));
+
+        // DB 연결 상태 확인
+        try {
+            plugin.getDatabaseManager().getConnection().close();
+            sender.sendMessage("§7DB 연결: §a정상");
+        } catch (Exception e) {
+            sender.sendMessage("§7DB 연결: §c오류 (" + e.getMessage() + ")");
+        }
+
+        sender.sendMessage("§e=== 테스트 시도 ===");
+        sender.sendMessage("§7저장 테스트 중...");
+
+        inventoryManager.savePlayerInventory(targetPlayer)
+                .thenCompose(saveSuccess -> {
+                    sender.sendMessage("§7저장 결과: " + (saveSuccess ? "§a성공" : "§c실패"));
+                    sender.sendMessage("§7로드 테스트 중...");
+                    return inventoryManager.loadPlayerInventory(targetPlayer);
+                })
+                .thenAccept(loadSuccess -> {
+                    sender.sendMessage("§7로드 결과: " + (loadSuccess ? "§a성공" : "§c실패"));
+                    sender.sendMessage("§6=== 디버그 완료 ===");
+                })
+                .exceptionally(throwable -> {
+                    sender.sendMessage("§c테스트 중 오류: " + throwable.getMessage());
+                    return null;
+                });
+    }
+
+    private void forceSaveInventory(CommandSender sender, String targetName) {
+        Player targetPlayer = Bukkit.getPlayer(targetName);
+
+        if (targetPlayer == null || !targetPlayer.isOnline()) {
+            sender.sendMessage("§c플레이어를 찾을 수 없습니다: " + targetName);
+            return;
+        }
+
+        sender.sendMessage("§e[강제 저장] " + targetName + "의 인벤토리를 강제 저장 중...");
+
+        inventoryManager.savePlayerInventory(targetPlayer)
+                .thenAccept(success -> {
+                    if (success) {
+                        sender.sendMessage("§a[강제 저장] " + targetName + "의 인벤토리가 강제 저장되었습니다.");
+                        targetPlayer.sendMessage("§e관리자에 의해 인벤토리가 강제 저장되었습니다.");
+                    } else {
+                        sender.sendMessage("§c[강제 저장] " + targetName + "의 인벤토리 강제 저장에 실패했습니다.");
+                    }
+                })
+                .exceptionally(throwable -> {
+                    sender.sendMessage("§c[강제 저장] 오류: " + throwable.getMessage());
+                    return null;
+                });
+    }
+
+    private void forceLoadInventory(CommandSender sender, String targetName) {
+        Player targetPlayer = Bukkit.getPlayer(targetName);
+
+        if (targetPlayer == null || !targetPlayer.isOnline()) {
+            sender.sendMessage("§c플레이어를 찾을 수 없습니다: " + targetName);
+            return;
+        }
+
+        sender.sendMessage("§e[강제 로드] " + targetName + "의 인벤토리를 강제 로드 중...");
+
+        inventoryManager.loadPlayerInventory(targetPlayer)
+                .thenAccept(success -> {
+                    if (success) {
+                        sender.sendMessage("§a[강제 로드] " + targetName + "의 인벤토리가 강제 로드되었습니다.");
+                        targetPlayer.sendMessage("§e관리자에 의해 인벤토리가 강제 로드되었습니다.");
+                    } else {
+                        sender.sendMessage("§c[강제 로드] " + targetName + "의 인벤토리 강제 로드에 실패했습니다.");
+                        sender.sendMessage("§7DB에 해당 플레이어의 인벤토리 데이터가 없을 수 있습니다.");
+                    }
+                })
+                .exceptionally(throwable -> {
+                    sender.sendMessage("§c[강제 로드] 오류: " + throwable.getMessage());
+                    return null;
+                });
     }
 }

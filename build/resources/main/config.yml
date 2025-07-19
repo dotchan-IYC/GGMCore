@@ -19,12 +19,12 @@ economy:
 
 # 크로스 서버 인벤토리 동기화 설정
 inventory_sync:
-  enabled: true                    # 인벤토리 동기화 사용 여부
-  save_on_quit: true              # 서버 퇴장 시 자동 저장
-  load_on_join: true              # 서버 접속 시 자동 로드
+  enabled: false                    # 인벤토리 동기화 사용 여부
+  save_on_quit: false              # 서버 퇴장 시 자동 저장
+  load_on_join: false              # 서버 접속 시 자동 로드
   load_delay: 20                  # 로드 지연 시간 (틱, 20 = 1초)
-  sync_health: true               # 체력 동기화
-  sync_hunger: true               # 배고픔 동기화
+  sync_health: false               # 체력 동기화
+  sync_hunger: false               # 배고픔 동기화
   sync_experience: true           # 경험치 동기화
   backup_on_save: false           # 저장 시 백업 생성 (개발용)
 
@@ -192,6 +192,15 @@ enchant_restrictions:
   block_enchant_table: true       # 인첸트 테이블 사용 차단 (야생 서버 자동 제외)
   block_book_drops: true          # 인첸트북 드롭 차단
   allow_ggm_books: true           # GGM 인첸트북만 허용
+
+reset:
+  set_default_gamemode: false     # 초기화 시 서바이벌 모드로 설정할지 여부
+  confirm_required: true          # 초기화 시 확인 절차 필요 여부 (추후 구현 가능)
+
+# 백업 관련 설정 (선택사항)
+backup:
+  enabled: false                  # 초기화 전 백업 생성 여부
+  retention_days: 7               # 백업 보관 기간
 
   # 포트 기반으로 야생 서버(25567)를 자동 감지하여 인첸트 테이블을 허용합니다.
   # GGM 인첸트북은 모든 서버에서 모루를 통해 적용 가능합니다!

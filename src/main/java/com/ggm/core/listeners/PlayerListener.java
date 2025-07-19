@@ -51,52 +51,91 @@ public class PlayerListener implements Listener {
                     return null;
                 });
 
-        // 인벤토리 로드 (설정에 따라)
+        // 인벤토리 로드 (설정에 따라) - 개선된 로직
         if (plugin.getConfig().getBoolean("inventory_sync.enabled", true) &&
                 plugin.getConfig().getBoolean("inventory_sync.load_on_join", true)) {
 
             long loadDelay = plugin.getConfig().getLong("inventory_sync.load_delay", 20L);
 
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                inventoryManager.loadPlayerInventory(player)
-                        .thenAccept(success -> {
-                            if (success) {
-                                plugin.getLogger().info(String.format("플레이어 %s의 인벤토리가 로드되었습니다.",
-                                        player.getName()));
-
-                                // 플레이어에게 알림
-                                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                                    player.sendMessage("§a인벤토리가 동기화되었습니다!");
-                                }, 20L); // 1초 후 메시지
-                            } else {
-                                plugin.getLogger().info(String.format("플레이어 %s: 새로운 인벤토리로 시작합니다.",
-                                        player.getName()));
-                            }
-                        })
-                        .exceptionally(throwable -> {
-                            plugin.getLogger().severe(String.format("플레이어 %s의 인벤토리 로드 실패: %s",
-                                    player.getName(), throwable.getMessage()));
-                            return null;
-                        });
+                handleInventorySync(player);
             }, loadDelay);
         }
+    }
+
+    /**
+     * 개선된 인벤토리 동기화 처리
+     */
+    private void handleInventorySync(Player player) {
+        plugin.getLogger().info(String.format("[인벤토리] %s의 인벤토리 동기화 시작...", player.getName()));
+
+        inventoryManager.loadPlayerInventory(player)
+                .thenAccept(success -> {
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        if (success) {
+                            player.sendMessage("§a✅ 인벤토리가 동기화되었습니다!");
+                            plugin.getLogger().info(String.format("[인벤토리] %s: 동기화 완료 (기존 데이터 로드)",
+                                    player.getName()));
+                        } else {
+                            // 기존 사용자의 경우 현재 인벤토리를 저장
+                            plugin.getLogger().info(String.format("[인벤토리] %s: 기존 데이터 없음, 현재 인벤토리 저장 중...",
+                                    player.getName()));
+
+                            inventoryManager.savePlayerInventory(player)
+                                    .thenAccept(saved -> {
+                                        plugin.getServer().getScheduler().runTask(plugin, () -> {
+                                            if (saved) {
+                                                player.sendMessage("§e📦 인벤토리가 새로 등록되었습니다!");
+                                                plugin.getLogger().info(String.format("[인벤토리] %s: 새 데이터 저장 완료",
+                                                        player.getName()));
+                                            } else {
+                                                player.sendMessage("§c❌ 인벤토리 등록에 실패했습니다.");
+                                                plugin.getLogger().warning(String.format("[인벤토리] %s: 새 데이터 저장 실패",
+                                                        player.getName()));
+                                            }
+                                        });
+                                    })
+                                    .exceptionally(saveException -> {
+                                        plugin.getServer().getScheduler().runTask(plugin, () -> {
+                                            player.sendMessage("§c❌ 인벤토리 저장 중 오류가 발생했습니다.");
+                                        });
+                                        plugin.getLogger().severe(String.format("[인벤토리] %s 저장 오류: %s",
+                                                player.getName(), saveException.getMessage()));
+                                        return null;
+                                    });
+                        }
+                    });
+                })
+                .exceptionally(throwable -> {
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        player.sendMessage("§c❌ 인벤토리 동기화 중 오류가 발생했습니다!");
+                        player.sendMessage("§7관리자에게 문의해주세요.");
+                    });
+                    plugin.getLogger().severe(String.format("[인벤토리] %s 로드 오류: %s",
+                            player.getName(), throwable.getMessage()));
+                    throwable.printStackTrace();
+                    return null;
+                });
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
 
-        // 인벤토리 저장 (설정에 따라)
+        // 인벤토리 저장 (설정에 따라) - 개선된 로직
         if (plugin.getConfig().getBoolean("inventory_sync.enabled", true) &&
                 plugin.getConfig().getBoolean("inventory_sync.save_on_quit", true)) {
 
             try {
+                plugin.getLogger().info(String.format("[인벤토리] %s의 인벤토리 저장 중...", player.getName()));
+
                 inventoryManager.savePlayerInventory(player).get(); // 동기 대기
-                plugin.getLogger().info(String.format("플레이어 %s의 인벤토리가 저장되었습니다.",
+                plugin.getLogger().info(String.format("[인벤토리] %s의 인벤토리가 저장되었습니다.",
                         player.getName()));
             } catch (Exception e) {
-                plugin.getLogger().severe(String.format("플레이어 %s의 인벤토리 저장 실패: %s",
+                plugin.getLogger().severe(String.format("[인벤토리] %s의 인벤토리 저장 실패: %s",
                         player.getName(), e.getMessage()));
+                e.printStackTrace();
             }
         }
 

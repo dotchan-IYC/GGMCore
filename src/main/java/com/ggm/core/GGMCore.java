@@ -159,6 +159,10 @@ public class GGMCore extends JavaPlugin {
             // 테스트 명령어
             safeRegisterCommand("test", new TestCommand(this));
 
+            //초기화 명령어
+            safeRegisterCommand("ggmreset", new ResetCommand(this));
+            getLogger().info("플레이어 초기화 명령어 등록 완료");
+
             // 인벤토리 관리 명령어 (안전하게)
             if (inventoryManager != null) {
                 safeRegisterCommand("inventory", new InventoryCommand(this));
