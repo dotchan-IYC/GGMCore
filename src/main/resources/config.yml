@@ -30,6 +30,7 @@ inventory_sync:
 
 # 커스텀 인첸트 설정
 custom_enchants:
+  # 기존 인첸트들
   lightning:
     base_chance: 5        # 기본 확률 5%
     chance_per_level: 5   # 레벨당 +5%
@@ -48,7 +49,30 @@ custom_enchants:
     base_exp: 2           # 기본 경험치 +2
     exp_per_level: 2      # 레벨당 +2
 
-# 인첸트북 설정
+  # 새로운 인첸트들
+  explosive_arrow:
+    base_power: 1.0       # 기본 폭발력
+    power_per_level: 0.5  # 레벨당 폭발력 증가
+
+  auto_smelt:
+    bonus_chance: 10      # 추가 아이템 드롭 확률 (레벨당 %)
+
+  area_mining:
+    cooldown: 1000        # 쿨다운 (밀리초)
+    durability_cost: 1    # 블록당 내구도 소모
+
+  poison_blade:
+    duration: 100         # 독 지속시간 (틱)
+    duration_per_level: 20 # 레벨당 지속시간 증가
+
+  freeze:
+    duration: 60          # 빙결 지속시간 (틱)
+    duration_per_level: 20 # 레벨당 지속시간 증가
+
+  tree_feller:
+    max_blocks: 64        # 최대 제거 블록 수
+
+# 인첸트북 설정 (확장됨)
 enchant_books:
   # 각 등급별 인첸트 풀 (바닐라 + 커스텀)
   common:
@@ -57,8 +81,12 @@ enchant_books:
     - "UNBREAKING:1"
     - "SHARPNESS:1"
     - "PROTECTION:1"
-    - "CUSTOM:auto_repair:1"        # 커스텀: 자동수리 1레벨 (20% 확률)
-    - "CUSTOM:vampire:1"            # 커스텀: 흡혈 1레벨 (추가)
+    - "CUSTOM:auto_repair:1"        # 커스텀: 자동수리 1레벨
+    - "CUSTOM:vampire:1"            # 커스텀: 흡혈 1레벨
+    - "CUSTOM:exp_boost:1"          # 커스텀: 경험증폭 1레벨
+    - "CUSTOM:high_jump:1"          # 커스텀: 점프 1레벨
+    - "CUSTOM:auto_smelt:1"         # 커스텀: 자동제련 1레벨
+
   rare:
     - "EFFICIENCY:2"
     - "UNBREAKING:2"
@@ -66,9 +94,13 @@ enchant_books:
     - "PROTECTION:2"
     - "FIRE_PROTECTION:1"
     - "PROJECTILE_PROTECTION:1"
-    - "CUSTOM:vampire:1"            # 커스텀: 흡혈 1레벨 (25% 확률)
-    - "CUSTOM:exp_boost:1"          # 커스텀: 경험증폭 1레벨 (25% 확률)
-    - "CUSTOM:lightning:1"          # 커스텀: 번개 1레벨 (추가)
+    - "CUSTOM:vampire:2"            # 커스텀: 흡혈 2레벨
+    - "CUSTOM:lightning:1"          # 커스텀: 번개 1레벨
+    - "CUSTOM:poison_blade:1"       # 커스텀: 독날 1레벨
+    - "CUSTOM:explosive_arrow:1"    # 커스텀: 폭발화살 1레벨
+    - "CUSTOM:freeze:1"             # 커스텀: 빙결 1레벨
+    - "CUSTOM:regeneration:1"       # 커스텀: 재생 1레벨
+
   epic:
     - "EFFICIENCY:3"
     - "UNBREAKING:3"
@@ -78,9 +110,13 @@ enchant_books:
     - "PROJECTILE_PROTECTION:2"
     - "FORTUNE:1"
     - "LOOTING:1"
-    - "CUSTOM:lightning:1"          # 커스텀: 번개 1레벨 (30% 확률)
-    - "CUSTOM:high_jump:1"          # 커스텀: 점프 1레벨 (30% 확률)
-    - "CUSTOM:vampire:2"            # 커스텀: 흡혈 2레벨 (30% 확률)
+    - "CUSTOM:lightning:2"          # 커스텀: 번개 2레벨
+    - "CUSTOM:area_mining:1"        # 커스텀: 광역채굴 1레벨
+    - "CUSTOM:tree_feller:1"        # 커스텀: 벌목꾼 1레벨
+    - "CUSTOM:soul_reaper:1"        # 커스텀: 영혼수확 1레벨
+    - "CUSTOM:piercing_shot:1"      # 커스텀: 관통사격 1레벨
+    - "CUSTOM:vein_miner:1"         # 커스텀: 광맥채굴 1레벨
+
   ultimate:
     - "EFFICIENCY:4"
     - "UNBREAKING:3"
@@ -91,10 +127,28 @@ enchant_books:
     - "FORTUNE:2"
     - "LOOTING:2"
     - "MENDING:1"
-    - "CUSTOM:lightning:2"          # 커스텀: 번개 2레벨 (50% 확률)
-    - "CUSTOM:vampire:3"            # 커스텀: 흡혈 3레벨 (50% 확률)
-    - "CUSTOM:auto_repair:2"        # 커스텀: 자동수리 2레벨 (50% 확률)
-    - "CUSTOM:exp_boost:2"          # 커스텀: 경험증폭 2레벨 (50% 확률)
+    - "CUSTOM:lightning:3"          # 커스텀: 번개 3레벨
+    - "CUSTOM:vampire:3"            # 커스텀: 흡혈 3레벨
+    - "CUSTOM:explosive_arrow:2"    # 커스텀: 폭발화살 2레벨
+    - "CUSTOM:area_mining:2"        # 커스텀: 광역채굴 2레벨
+    - "CUSTOM:life_steal:1"         # 커스텀: 생명흡수 1레벨
+    - "CUSTOM:berserker:1"          # 커스텀: 광전사 1레벨
+    - "CUSTOM:immunity:1"           # 커스텀: 면역 1레벨
+    - "CUSTOM:spider_walk:1"        # 커스텀: 거미보행 1레벨
+    - "CUSTOM:water_walker:1"       # 커스텀: 물위걷기 1레벨
+
+# 모루 인첸트 적용 설정
+anvil_enchanting:
+  enabled: true                     # 모루 커스텀 인첸트 적용 활성화
+  max_enchant_level: 5             # 최대 인첸트 레벨
+  base_exp_cost: 5                 # 기본 경험치 비용 (레벨당)
+  upgrade_exp_cost: 5              # 업그레이드 추가 비용
+  success_rates:                   # 레벨별 성공 확률
+    level_1: 90                    # 1레벨: 90%
+    level_2: 80                    # 2레벨: 80%
+    level_3: 70                    # 3레벨: 70%
+    level_4: 60                    # 4레벨: 60%
+    level_5: 50                    # 5레벨: 50%
 
 # 메시지 설정
 messages:
@@ -108,6 +162,12 @@ messages:
   balance: "§e현재 잔액: §6{balance}G"
   enchant_restricted: "§c인첸트가 제한되어 있습니다!"
   use_ggm_books: "§7GGM 인첸트북만 사용 가능합니다."
+
+  # 모루 인첸트 메시지
+  anvil_success: "§a✨ 인첸트 적용 성공!"
+  anvil_failure: "§c💥 인챈트 적용에 실패했습니다!"
+  insufficient_exp: "§c경험치 레벨이 부족합니다!"
+  incompatible_item: "§c이 아이템에는 해당 인첸트를 적용할 수 없습니다!"
 
 # 스코어보드 설정
 scoreboard:
@@ -133,5 +193,5 @@ enchant_restrictions:
   block_book_drops: true          # 인첸트북 드롭 차단
   allow_ggm_books: true           # GGM 인첸트북만 허용
 
-  # allow_enchant_table_on_survival 설정은 더 이상 필요 없습니다!
   # 포트 기반으로 야생 서버(25567)를 자동 감지하여 인첸트 테이블을 허용합니다.
+  # GGM 인첸트북은 모든 서버에서 모루를 통해 적용 가능합니다!

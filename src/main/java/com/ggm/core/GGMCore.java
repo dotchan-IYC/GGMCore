@@ -16,6 +16,7 @@ public class GGMCore extends JavaPlugin {
     private EnchantBookManager enchantBookManager;
     private EnchantRestrictionManager enchantRestrictionManager;
     private CustomEnchantManager customEnchantManager;
+    private AnvilEnchantManager anvilEnchantManager; // 새로 추가
     private InventoryManager inventoryManager; // null일 수 있음
     private ScoreboardManager scoreboardManager;
 
@@ -37,6 +38,7 @@ public class GGMCore extends JavaPlugin {
             registerListeners();
 
             getLogger().info("GGMCore 플러그인이 활성화되었습니다!");
+            getLogger().info("새로운 커스텀 인첸트와 모루 적용 시스템이 추가되었습니다!");
 
         } catch (Exception e) {
             getLogger().severe("플러그인 초기화 실패: " + e.getMessage());
@@ -82,13 +84,23 @@ public class GGMCore extends JavaPlugin {
             enchantBookManager = new EnchantBookManager(this);
             getLogger().info("인첸트북 매니저 초기화 완료");
 
-            // 인첸트 제한 매니저 초기화
+            // 커스텀 인첸트 매니저 초기화 (인첸트 제한보다 먼저 초기화)
+            customEnchantManager = new CustomEnchantManager(this);
+            getLogger().info("커스텀 인첸트 매니저 초기화 완료 (" +
+                    customEnchantManager.getCustomEnchants().size() + "개 인첸트)");
+
+            // 모루 인첸트 매니저 초기화 (새로 추가)
+            if (getConfig().getBoolean("anvil_enchanting.enabled", true)) {
+                anvilEnchantManager = new AnvilEnchantManager(this);
+                getLogger().info("모루 인첸트 적용 시스템 초기화 완료");
+            } else {
+                getLogger().info("모루 인첸트 적용 시스템이 비활성화되어 있습니다.");
+                anvilEnchantManager = null;
+            }
+
+            // 인첸트 제한 매니저 초기화 (모루 매니저 다음에 초기화)
             enchantRestrictionManager = new EnchantRestrictionManager(this);
             getLogger().info("인첸트 제한 매니저 초기화 완료");
-
-            // 커스텀 인첸트 매니저 초기화
-            customEnchantManager = new CustomEnchantManager(this);
-            getLogger().info("커스텀 인첸트 매니저 초기화 완료");
 
             // 인벤토리 매니저 초기화 (안전하게)
             try {
@@ -176,11 +188,17 @@ public class GGMCore extends JavaPlugin {
             // 플레이어 접속 리스너
             getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
 
-            // 인첸트 제한 리스너
-            getServer().getPluginManager().registerEvents(enchantRestrictionManager, this);
-
             // 커스텀 인첸트 리스너
             getServer().getPluginManager().registerEvents(customEnchantManager, this);
+
+            // 모루 인첸트 적용 리스너 (새로 추가)
+            if (anvilEnchantManager != null) {
+                getServer().getPluginManager().registerEvents(anvilEnchantManager, this);
+                getLogger().info("모루 인첸트 적용 리스너 등록 완료");
+            }
+
+            // 인첸트 제한 리스너 (모루 리스너 다음에 등록)
+            getServer().getPluginManager().registerEvents(enchantRestrictionManager, this);
 
             // 커스텀 인첸트 주기적 효과 시작
             customEnchantManager.startPeriodicEffects();
@@ -219,6 +237,20 @@ public class GGMCore extends JavaPlugin {
 
     public CustomEnchantManager getCustomEnchantManager() {
         return customEnchantManager;
+    }
+
+    /**
+     * 모루 인첸트 매니저 (null일 수 있음)
+     */
+    public AnvilEnchantManager getAnvilEnchantManager() {
+        return anvilEnchantManager;
+    }
+
+    /**
+     * 모루 인첸트 적용이 활성화되어 있는지 확인
+     */
+    public boolean isAnvilEnchantingEnabled() {
+        return anvilEnchantManager != null && getConfig().getBoolean("anvil_enchanting.enabled", true);
     }
 
     /**

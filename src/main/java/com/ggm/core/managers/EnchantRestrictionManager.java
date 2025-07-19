@@ -4,7 +4,6 @@ import com.ggm.core.GGMCore;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Item;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -29,7 +28,7 @@ public class EnchantRestrictionManager implements Listener {
 
     public EnchantRestrictionManager(GGMCore plugin) {
         this.plugin = plugin;
-        this.ggmBookKey = new NamespacedKey(plugin, "book_type");
+        this.ggmBookKey = new NamespacedKey(plugin, "ggm_enchant_book");
     }
 
     /**
@@ -64,7 +63,6 @@ public class EnchantRestrictionManager implements Listener {
      * 야생 서버에서 인첸트 테이블 허용하는지 확인 (자동 감지)
      */
     private boolean isAllowEnchantTableOnSurvival() {
-        // 서버 감지를 통해 야생 서버인지 확인
         return plugin.getServerDetector().isEnchantTableAllowed();
     }
 
@@ -87,8 +85,7 @@ public class EnchantRestrictionManager implements Listener {
         if (meta == null) return false;
 
         // 방법 1: NBT 태그로 확인 (가장 확실함)
-        NamespacedKey ggmKey = new NamespacedKey(plugin, "ggm_enchant_book");
-        if (meta.getPersistentDataContainer().has(ggmKey, PersistentDataType.BYTE)) {
+        if (meta.getPersistentDataContainer().has(ggmBookKey, PersistentDataType.BYTE)) {
             return true;
         }
 
@@ -124,7 +121,7 @@ public class EnchantRestrictionManager implements Listener {
             return;
         }
 
-        // 야생 서버에서는 허용 (나중에 G 강화 시스템에서 처리)
+        // 야생 서버에서는 허용 (G 강화 시스템에서 처리)
         if (isAllowEnchantTableOnSurvival()) {
             return;
         }
@@ -133,7 +130,7 @@ public class EnchantRestrictionManager implements Listener {
         event.setCancelled(true);
 
         sendMessage(player, "§c인첸트 테이블은 사용할 수 없습니다!");
-        sendMessage(player, "§7GGM 인첸트북만 사용 가능합니다.");
+        sendMessage(player, "§7GGM 인첸트북을 모루에서 사용하세요.");
     }
 
     /**
@@ -155,9 +152,9 @@ public class EnchantRestrictionManager implements Listener {
     }
 
     /**
-     * 모루에서 인첸트북 사용 차단
+     * 모루에서 인첸트북 사용 제한 (수정: GGM 인첸트북은 허용)
      */
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.NORMAL) // AnvilEnchantManager가 HIGH이므로 NORMAL로 설정
     public void onPrepareAnvil(PrepareAnvilEvent event) {
         if (!isRestrictionEnabled() || !isBlockEnchantBooks()) {
             return;
@@ -178,9 +175,11 @@ public class EnchantRestrictionManager implements Listener {
                     Player player = (Player) event.getViewers().get(0);
                     sendMessage(player, "§c일반 인첸트북은 사용할 수 없습니다!");
                     sendMessage(player, "§7GGM 인첸트북만 사용 가능합니다.");
+                    sendMessage(player, "§a§l팁: §7/givebook 명령어로 GGM 인첸트북을 얻을 수 있습니다.");
                 }
             }
         }
+        // GGM 인첸트북인 경우는 AnvilEnchantManager에서 처리하도록 허용
     }
 
     /**
@@ -216,20 +215,20 @@ public class EnchantRestrictionManager implements Listener {
     }
 
     /**
-     * 인첸트북 사용 제한 처리
+     * 인첸트북 사용 제한 처리 (수정: GGM 인첸트북 허용)
      */
     private void handleEnchantBookRestriction(InventoryClickEvent event, Player player) {
         // 모루 인벤토리에서의 클릭
         if (event.getInventory() instanceof AnvilInventory) {
             ItemStack cursor = event.getCursor();
-            ItemStack clicked = event.getCurrentItem();
 
-            // 일반 인첸트북을 모루에 넣으려 할 때
+            // 일반 인첸트북을 모루에 넣으려 할 때만 차단
             if (event.getSlot() == 1) { // 두 번째 슬롯 (인첸트북 슬롯)
                 if (isVanillaEnchantBook(cursor)) {
                     event.setCancelled(true);
                     sendMessage(player, "§c일반 인첸트북은 사용할 수 없습니다!");
                     sendMessage(player, "§7GGM 인첸트북만 사용 가능합니다.");
+                    sendMessage(player, "§a§l팁: §7/test custombook 명령어로 테스트 인첸트북을 얻을 수 있습니다.");
                     return;
                 }
             }
@@ -247,7 +246,7 @@ public class EnchantRestrictionManager implements Listener {
     }
 
     /**
-     * 드래그로 인첸트북 이동 방지
+     * 드래그로 인첸트북 이동 방지 (수정: GGM 인첸트북 허용)
      */
     @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryDrag(InventoryDragEvent event) {
@@ -273,6 +272,7 @@ public class EnchantRestrictionManager implements Listener {
                         event.setCancelled(true);
                         Player player = (Player) event.getWhoClicked();
                         sendMessage(player, "§c일반 인첸트북은 사용할 수 없습니다!");
+                        sendMessage(player, "§7GGM 인첸트북만 사용 가능합니다.");
                         return;
                     }
                 }
@@ -371,6 +371,8 @@ public class EnchantRestrictionManager implements Listener {
             if (isAllowEnchantTableOnSurvival()) {
                 plugin.getLogger().info("- 야생 서버 인첸트 테이블: §a허용");
             }
+
+            plugin.getLogger().info("- 모루 GGM 인첸트북 적용: §a허용");
         }
     }
 }
