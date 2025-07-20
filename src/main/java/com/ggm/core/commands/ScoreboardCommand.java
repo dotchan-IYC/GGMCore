@@ -38,6 +38,7 @@ public class ScoreboardCommand implements CommandExecutor {
             disabledPlayers.remove(uuid);
             scoreboardManager.createScoreboard(player);
             player.sendMessage("§a스코어보드가 활성화되었습니다!");
+            player.sendMessage("§7실시간 G 잔액과 직업 정보가 표시됩니다.");
         } else {
             // 스코어보드 비활성화
             disabledPlayers.add(uuid);

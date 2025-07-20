@@ -20,7 +20,6 @@ public class PayCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        // 플레이어만 사용 가능
         if (!(sender instanceof Player)) {
             sender.sendMessage("이 명령어는 플레이어만 사용할 수 있습니다.");
             return true;
@@ -28,30 +27,20 @@ public class PayCommand implements CommandExecutor {
 
         Player player = (Player) sender;
 
-        // 권한 확인
-        if (!player.hasPermission("ggm.pay")) {
-            economyManager.sendMessage(player, "no_permission");
-            return true;
-        }
-
-        // 인수 확인
         if (args.length != 2) {
             player.sendMessage("§c사용법: /pay <플레이어> <금액>");
             return true;
         }
 
-        // 받는 플레이어 확인
-        String targetName = args[0];
-        Player targetPlayer = Bukkit.getPlayer(targetName);
-
-        if (targetPlayer == null || !targetPlayer.isOnline()) {
+        // 대상 플레이어 확인
+        Player targetPlayer = Bukkit.getPlayer(args[0]);
+        if (targetPlayer == null) {
             economyManager.sendMessage(player, "player_not_found");
             return true;
         }
 
-        // 자기 자신에게 송금 방지
-        if (player.getUniqueId().equals(targetPlayer.getUniqueId())) {
-            player.sendMessage("§c자기 자신에게 송금할 수 없습니다.");
+        if (targetPlayer.equals(player)) {
+            player.sendMessage("§c자기 자신에게는 송금할 수 없습니다.");
             return true;
         }
 
@@ -69,7 +58,7 @@ public class PayCommand implements CommandExecutor {
             return true;
         }
 
-        // 송금 실행 (비동기)
+        // 송금 실행 (비동기) - 스코어보드 업데이트 자동 포함
         economyManager.transferMoney(player.getUniqueId(), targetPlayer.getUniqueId(), amount)
                 .thenAccept(result -> {
                     // 메인 스레드에서 메시지 전송
@@ -88,9 +77,9 @@ public class PayCommand implements CommandExecutor {
                                     "amount", economyManager.formatMoney(result.getAmount())
                             );
 
-                            // 스코어보드 업데이트
-                            plugin.getScoreboardManager().updatePlayerBalance(player.getUniqueId());
-                            plugin.getScoreboardManager().updatePlayerBalance(targetPlayer.getUniqueId());
+                            // 성공 효과음
+                            player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.2f);
+                            targetPlayer.playSound(targetPlayer.getLocation(), org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.2f);
 
                             plugin.getLogger().info(String.format("[송금] %s -> %s: %dG (수수료: %dG)",
                                     player.getName(), targetPlayer.getName(), result.getAmount(), result.getFee()));
