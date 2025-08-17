@@ -1,5 +1,10 @@
 # GGMCore 플러그인 설정 파일
 
+# 서버 설정
+server:
+  type: "survival"  # 서버 타입: lobby, survival, creative, towny
+  name: "GGM 서버"   # 서버 표시 이름
+
 # 데이터베이스 설정
 database:
   host: "localhost"
@@ -25,8 +30,75 @@ inventory_sync:
   load_delay: 20                  # 로드 지연 시간 (틱, 20 = 1초)
   sync_health: false               # 체력 동기화
   sync_hunger: false               # 배고픔 동기화
-  sync_experience: true           # 경험치 동기화
+  sync_experience: true           # 일반 경험치 동기화 (인첸트용)
   backup_on_save: false           # 저장 시 백업 생성 (개발용)
+
+# 직업 경험치 시스템 설정 (NEW!)
+job_experience:
+  enabled: true                   # 직업 경험치 시스템 사용 여부
+
+  # 레벨업 필요 경험치 (커스터마이징 가능)
+  level_requirements:
+    1: 0      # 1레벨은 0 경험치
+    2: 100    # 2레벨: 100 경험치
+    3: 300    # 3레벨: 총 300 경험치
+    4: 600    # 4레벨: 총 600 경험치
+    5: 1000   # 5레벨: 총 1000 경험치
+    6: 1500   # 6레벨: 총 1500 경험치
+    7: 2100   # 7레벨: 총 2100 경험치
+    8: 2800   # 8레벨: 총 2800 경험치
+    9: 3600   # 9레벨: 총 3600 경험치
+    10: 5000  # 10레벨(만렙): 총 5000 경험치
+
+  # 직업별 경험치 획득 배율
+  job_multipliers:
+    # 탱커 (방어 관련)
+    TANK:
+      DAMAGE_TAKEN: 2       # 피해 받을 때
+      BLOCK_WITH_SHIELD: 5  # 방패로 막을 때
+      KILL_MONSTER: 3       # 몬스터 처치
+
+    # 검사 (근접 전투)
+    WARRIOR:
+      MELEE_KILL: 4         # 근접 무기로 처치
+      CRITICAL_HIT: 3       # 크리티컬 히트
+      SWORD_DAMAGE: 2       # 검으로 피해 입힐 때
+
+    # 궁수 (원거리 전투)
+    ARCHER:
+      BOW_KILL: 5           # 활로 처치
+      LONG_SHOT: 7          # 장거리 사격 (30블록 이상)
+      HEADSHOT: 10          # 헤드샷 (크리티컬)
+
+    # 광부 (채굴)
+    MINER:
+      MINE_ORE: 3           # 일반 광석 채굴
+      MINE_RARE_ORE: 8      # 희귀 광석 채굴 (다이아, 에메랄드)
+      MINE_STONE: 1         # 돌 채굴
+
+    # 나무꾼 (벌목)
+    LUMBERJACK:
+      CUT_TREE: 2           # 일반 나무 벌목
+      CUT_RARE_TREE: 5      # 희귀 나무 벌목 (정글, 다크오크)
+
+    # 어부 (낚시)
+    FISHER:
+      CATCH_FISH: 3         # 물고기 낚기
+      CATCH_TREASURE: 10    # 보물 낚기
+      CATCH_JUNK: 1         # 쓰레기 낚기
+
+  # 경험치 보너스 설정
+  bonuses:
+    weekend_multiplier: 1.5   # 주말 경험치 1.5배
+    event_multiplier: 2.0     # 이벤트 시 경험치 2배
+    party_bonus: 1.2          # 파티 플레이 시 20% 보너스
+
+  # 알림 설정
+  notifications:
+    exp_gain_message: true    # 경험치 획득 메시지 표시
+    levelup_sound: true       # 레벨업 사운드 재생
+    levelup_effects: true     # 레벨업 파티클 효과
+    broadcast_levelup: false  # 레벨업 시 전체 공지
 
 # 커스텀 인첸트 설정
 custom_enchants:
@@ -46,7 +118,7 @@ custom_enchants:
     heal_per_level: 10    # 레벨당 +10%
 
   exp_boost:
-    base_exp: 2           # 기본 경험치 +2
+    base_exp: 2           # 기본 경험치 +2 (일반 경험치용)
     exp_per_level: 2      # 레벨당 +2
 
   # 새로운 인첸트들
@@ -112,95 +184,68 @@ enchant_books:
     - "LOOTING:1"
     - "CUSTOM:lightning:2"          # 커스텀: 번개 2레벨
     - "CUSTOM:area_mining:1"        # 커스텀: 광역채굴 1레벨
-    - "CUSTOM:tree_feller:1"        # 커스텀: 벌목꾼 1레벨
-    - "CUSTOM:soul_reaper:1"        # 커스텀: 영혼수확 1레벨
-    - "CUSTOM:piercing_shot:1"      # 커스텀: 관통사격 1레벨
-    - "CUSTOM:vein_miner:1"         # 커스텀: 광맥채굴 1레벨
+    - "CUSTOM:tree_feller:1"        # 커스텀: 나무꾼 1레벨
+    - "CUSTOM:freeze:2"             # 커스텀: 빙결 2레벨
+    - "CUSTOM:regeneration:2"       # 커스텀: 재생 2레벨
 
   ultimate:
     - "EFFICIENCY:4"
-    - "UNBREAKING:3"
+    - "UNBREAKING:4"
     - "SHARPNESS:4"
     - "PROTECTION:4"
-    - "FIRE_PROTECTION:3"
-    - "PROJECTILE_PROTECTION:3"
     - "FORTUNE:2"
     - "LOOTING:2"
-    - "MENDING:1"
     - "CUSTOM:lightning:3"          # 커스텀: 번개 3레벨
     - "CUSTOM:vampire:3"            # 커스텀: 흡혈 3레벨
-    - "CUSTOM:explosive_arrow:2"    # 커스텀: 폭발화살 2레벨
     - "CUSTOM:area_mining:2"        # 커스텀: 광역채굴 2레벨
-    - "CUSTOM:life_steal:1"         # 커스텀: 생명흡수 1레벨
-    - "CUSTOM:berserker:1"          # 커스텀: 광전사 1레벨
-    - "CUSTOM:immunity:1"           # 커스텀: 면역 1레벨
-    - "CUSTOM:spider_walk:1"        # 커스텀: 거미보행 1레벨
-    - "CUSTOM:water_walker:1"       # 커스텀: 물위걷기 1레벨
+    - "CUSTOM:tree_feller:2"        # 커스텀: 나무꾼 2레벨
+    - "CUSTOM:explosive_arrow:2"    # 커스텀: 폭발화살 2레벨
+    - "CUSTOM:auto_smelt:2"         # 커스텀: 자동제련 2레벨
+
+# 인첸트 제한 설정
+enchant_restrictions:
+  enabled: true
+
+  # 아이템별 최대 인첸트 제한
+  max_enchants_per_item:
+    SWORD: 8
+    BOW: 6
+    TOOL: 7
+    ARMOR: 6
+    DEFAULT: 5
+
+  # 인첸트 레벨 제한
+  max_enchant_levels:
+    SHARPNESS: 5
+    PROTECTION: 4
+    EFFICIENCY: 5
+    UNBREAKING: 3
+    FORTUNE: 3
+    LOOTING: 3
+
+# 파괴방지권 설정
+protection_scroll:
+  enabled: true
+  success_rate: 70          # 기본 성공률 70%
+  consume_on_failure: true  # 실패 시 파괴방지권 소모 여부
 
 # 모루 인첸트 적용 설정
 anvil_enchanting:
-  enabled: true                     # 모루 커스텀 인첸트 적용 활성화
-  max_enchant_level: 5             # 최대 인첸트 레벨
-  base_exp_cost: 5                 # 기본 경험치 비용 (레벨당)
-  upgrade_exp_cost: 5              # 업그레이드 추가 비용
-  success_rates:                   # 레벨별 성공 확률
-    level_1: 90                    # 1레벨: 90%
-    level_2: 80                    # 2레벨: 80%
-    level_3: 70                    # 3레벨: 70%
-    level_4: 60                    # 4레벨: 60%
-    level_5: 50                    # 5레벨: 50%
-
-# 메시지 설정
-messages:
-  prefix: "§6[GGM] §f"
-  no_permission: "§c권한이 없습니다."
-  player_not_found: "§c플레이어를 찾을 수 없습니다."
-  invalid_amount: "§c올바른 금액을 입력해주세요."
-  insufficient_funds: "§cG가 부족합니다."
-  transfer_success: "§a{player}님에게 {amount}G를 송금했습니다. (수수료: {fee}G)"
-  receive_money: "§a{player}님으로부터 {amount}G를 받았습니다."
-  balance: "§e현재 잔액: §6{balance}G"
-  enchant_restricted: "§c인첸트가 제한되어 있습니다!"
-  use_ggm_books: "§7GGM 인첸트북만 사용 가능합니다."
-
-  # 모루 인첸트 메시지
-  anvil_success: "§a인첸트 적용 성공!"
-  anvil_failure: "§c인챈트 적용에 실패했습니다!"
-  insufficient_exp: "§c경험치 레벨이 부족합니다!"
-  incompatible_item: "§c이 아이템에는 해당 인첸트를 적용할 수 없습니다!"
+  enabled: true
+  allow_custom_enchants: true     # 커스텀 인첸트 적용 허용
+  experience_cost_multiplier: 1.0 # 경험치 비용 배율
+  max_repair_cost: 39            # 최대 수리 비용
 
 # 스코어보드 설정
 scoreboard:
   enabled: true
-  # server_name은 포트 기반으로 자동 감지됩니다!
-  # 25577 →로비
-  # 25566 →건축
-  # 25567 →야생
-  # 25568 →마을
-  update_interval: 100            # 시간 업데이트 간격 (틱 단위, 100 = 5초, 깜빡임 방지)
-  smooth_update: true             # 부분 업데이트 사용 (깜빡임 방지)
+  update_interval: 20     # 업데이트 간격 (틱)
+  show_job_info: true     # 직업 정보 표시 (야생 서버만)
+  show_job_exp: true      # 직업 경험치 표시 (야생 서버만)
 
-# 서버 설정 (포트로 자동 감지되지 않는 경우에만 사용)
-server:
-  type: "unknown"                 # lobby, build, survival, village 중 하나
-  display_name: "알 수 없음"        # 스코어보드에 표시될 이름
-
-# 인첸트 제한 설정
-enchant_restrictions:
-  enabled: true                   # 모든 서버에서 활성화
-  block_enchant_books: true       # 일반 인첸트북 사용 차단
-  block_enchant_table: true       # 인첸트 테이블 사용 차단 (야생 서버 자동 제외)
-  block_book_drops: true          # 인첸트북 드롭 차단
-  allow_ggm_books: true           # GGM 인첸트북만 허용
-
-reset:
-  set_default_gamemode: false     # 초기화 시 서바이벌 모드로 설정할지 여부
-  confirm_required: true          # 초기화 시 확인 절차 필요 여부 (추후 구현 가능)
-
-# 백업 관련 설정 (선택사항)
-backup:
-  enabled: false                  # 초기화 전 백업 생성 여부
-  retention_days: 7               # 백업 보관 기간
-
-  # 포트 기반으로 야생 서버(25567)를 자동 감지하여 인첸트 테이블을 허용합니다.
-  # GGM 인첸트북은 모든 서버에서 모루를 통해 적용 가능합니다!
+# 액션바 설정
+actionbar:
+  enabled: true
+  update_interval: 10     # 업데이트 간격 (틱)
+  show_coordinates: true  # 좌표 표시
+  show_direction: true    # 방향 표시

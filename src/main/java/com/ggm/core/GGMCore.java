@@ -1,45 +1,47 @@
 package com.ggm.core;
 
 import com.ggm.core.commands.*;
-import com.ggm.core.listeners.EnchantBookListener;
-import com.ggm.core.listeners.PlayerListener;
+import com.ggm.core.listeners.*;
 import com.ggm.core.managers.*;
 import com.ggm.core.utils.ServerDetector;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class GGMCore extends JavaPlugin {
+public final class GGMCore extends JavaPlugin {
 
-    private static GGMCore instance;
-    private ServerDetector serverDetector;
+    // 매니저들
     private DatabaseManager databaseManager;
     private EconomyManager economyManager;
-    private EnchantBookManager enchantBookManager;
-    private EnchantRestrictionManager enchantRestrictionManager;
-    private CustomEnchantManager customEnchantManager;
-    private AnvilEnchantManager anvilEnchantManager; // 새로 추가
-    private ProtectionScrollManager protectionScrollManager; // 파괴방지권 매니저 추가
-    private InventoryManager inventoryManager; // null일 수 있음
     private ScoreboardManager scoreboardManager;
+    private InventoryManager inventoryManager;
+    private EnchantBookManager enchantBookManager;
+    private CustomEnchantManager customEnchantManager;
+    private EnchantRestrictionManager enchantRestrictionManager;
+    private ProtectionScrollManager protectionScrollManager;
+    private AnvilEnchantManager anvilEnchantManager;
+    private JobExperienceManager jobExperienceManager; // 새로 추가
+
+    // 기타 유틸리티
+    private ServerDetector serverDetector;
 
     @Override
     public void onEnable() {
-        instance = this;
-
         try {
-            // 설정 파일 생성
+            getLogger().info("GGMCore 플러그인을 시작합니다...");
+
+            // 설정 파일 저장
             saveDefaultConfig();
 
-            // 매니저 초기화
+            // 매니저들 초기화
             initializeManagers();
 
             // 명령어 등록
             registerCommands();
 
             // 이벤트 리스너 등록
-            registerListeners();
+            registerEvents();
 
-            getLogger().info("GGMCore 플러그인이 활성화되었습니다!");
-            getLogger().info("새로운 커스텀 인첸트와 모루 적용 시스템이 추가되었습니다!");
+            getLogger().info("GGMCore 플러그인이 성공적으로 활성화되었습니다!");
+            getLogger().info("새로운 직업 경험치 시스템이 추가되었습니다!");
 
         } catch (Exception e) {
             getLogger().severe("플러그인 초기화 실패: " + e.getMessage());
@@ -81,6 +83,10 @@ public class GGMCore extends JavaPlugin {
             economyManager = new EconomyManager(this);
             getLogger().info("경제 매니저 초기화 완료");
 
+            // 직업 경험치 매니저 초기화 (새로 추가 - 스코어보드보다 먼저)
+            jobExperienceManager = new JobExperienceManager(this);
+            getLogger().info("직업 경험치 매니저 초기화 완료");
+
             // 인첸트북 매니저 초기화
             enchantBookManager = new EnchantBookManager(this);
             getLogger().info("인첸트북 매니저 초기화 완료");
@@ -90,11 +96,11 @@ public class GGMCore extends JavaPlugin {
             getLogger().info("커스텀 인첸트 매니저 초기화 완료 (" +
                     customEnchantManager.getCustomEnchants().size() + "개 인첸트)");
 
-            // 파괴방지권 매니저 초기화 (새로 추가)
+            // 파괴방지권 매니저 초기화
             protectionScrollManager = new ProtectionScrollManager(this);
             getLogger().info("파괴방지권 시스템 초기화 완료");
 
-            // 모루 인첸트 매니저 초기화 (새로 추가)
+            // 모루 인첸트 매니저 초기화
             if (getConfig().getBoolean("anvil_enchanting.enabled", true)) {
                 anvilEnchantManager = new AnvilEnchantManager(this);
                 getLogger().info("모루 인첸트 적용 시스템 초기화 완료");
@@ -107,6 +113,10 @@ public class GGMCore extends JavaPlugin {
             enchantRestrictionManager = new EnchantRestrictionManager(this);
             getLogger().info("인첸트 제한 매니저 초기화 완료");
 
+            // 스코어보드 매니저 초기화 (직업 경험치 매니저 다음에 초기화)
+            scoreboardManager = new ScoreboardManager(this);
+            getLogger().info("스코어보드 매니저 초기화 완료");
+
             // 인벤토리 매니저 초기화 (안전하게)
             try {
                 if (getConfig().getBoolean("inventory_sync.enabled", false)) {
@@ -117,204 +127,84 @@ public class GGMCore extends JavaPlugin {
                     inventoryManager = null;
                 }
             } catch (Exception e) {
-                getLogger().warning("인벤토리 매니저 초기화 실패 - 기본 기능으로 계속: " + e.getMessage());
+                getLogger().warning("인벤토리 매니저 초기화 실패: " + e.getMessage());
                 inventoryManager = null;
             }
 
-            // 스코어보드 매니저 초기화
-            scoreboardManager = new ScoreboardManager(this);
-            getLogger().info("스코어보드 매니저 초기화 완료");
-
         } catch (Exception e) {
-            getLogger().severe("매니저 초기화 중 오류 발생: " + e.getMessage());
+            getLogger().severe("매니저 초기화 실패: " + e.getMessage());
             e.printStackTrace();
-            throw e;
         }
     }
 
     private void registerCommands() {
         try {
-            // G 시스템 명령어
-            safeRegisterCommand("pay", new PayCommand(this));
-            safeRegisterCommand("oppay", new OpPayCommand(this));
-            safeRegisterCommand("takemoney", new TakeMoneyCommand(this));
-            safeRegisterCommand("g", new BalanceCommand(this));
-            safeRegisterCommand("openinven", new OpenInvenCommand(this));
+            // 기존 명령어들
+            getCommand("pay").setExecutor(new PayCommand(this));
+            getCommand("oppay").setExecutor(new OpPayCommand(this));
+            getCommand("takemoney").setExecutor(new TakeMoneyCommand(this));
+            getCommand("openinven").setExecutor(new OpenInvenCommand(this));
+            getCommand("givebook").setExecutor(new GiveBookCommand(this));
+            getCommand("g").setExecutor(new BalanceCommand(this));
+            getCommand("sb").setExecutor(new ScoreboardCommand(this));
+            getCommand("ggmreload").setExecutor(new ReloadCommand(this));
+            getCommand("actionbar").setExecutor(new ActionBarCommand(this));
+            getCommand("enchantconfig").setExecutor(new EnchantConfigCommand(this));
+            getCommand("test").setExecutor(new TestCommand(this));
+            getCommand("ggmreset").setExecutor(new ResetPlayerCommand(this));
 
-            // 인첸트북 명령어
-            safeRegisterCommand("givebook", new GiveBookCommand(this));
-
-            // 스코어보드 명령어
-            safeRegisterCommand("sb", new ScoreboardCommand(this));
-
-            // ActionBar 명령어
-            safeRegisterCommand("actionbar", new ActionBarCommand(this));
-
-            // 커스텀 인첸트 설정 명령어
-            safeRegisterCommand("enchantconfig", new EnchantConfigCommand(this));
-
-            // 리로드 명령어
-            safeRegisterCommand("ggmreload", new ReloadCommand(this));
-
-            // 테스트 명령어
-            safeRegisterCommand("test", new TestCommand(this));
-
-            //초기화 명령어
-            safeRegisterCommand("ggmreset", new ResetCommand(this));
-            getLogger().info("플레이어 초기화 명령어 등록 완료");
-
-            // 인벤토리 관리 명령어 (안전하게)
+            // 인벤토리 명령어 (조건부)
             if (inventoryManager != null) {
-                safeRegisterCommand("inventory", new InventoryCommand(this));
-                getLogger().info("인벤토리 명령어 등록 완료");
-            } else {
-                getLogger().info("인벤토리 동기화가 비활성화되어 인벤토리 명령어를 등록하지 않습니다.");
+                getCommand("inventory").setExecutor(new InventoryCommand(this));
             }
 
+            // 새로운 직업 경험치 명령어
+            getCommand("jobexp").setExecutor(new JobExpCommand(this));
+
+            // 직업 시스템 디버그 명령어 (OP 전용)
+            getCommand("jobdebug").setExecutor(new JobDebugCommand(this));
+
+            getLogger().info("명령어 등록 완료");
+
         } catch (Exception e) {
-            getLogger().warning("명령어 등록 중 오류: " + e.getMessage());
+            getLogger().severe("명령어 등록 실패: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    private void safeRegisterCommand(String commandName, Object executor) {
+    private void registerEvents() {
         try {
-            if (getCommand(commandName) != null) {
-                getCommand(commandName).setExecutor((org.bukkit.command.CommandExecutor) executor);
-                getLogger().info(commandName + " 명령어 등록 완료");
-            } else {
-                getLogger().warning(commandName + " 명령어 등록 실패 - plugin.yml 확인 필요");
-            }
-        } catch (Exception e) {
-            getLogger().warning(commandName + " 명령어 등록 중 오류: " + e.getMessage());
-        }
-    }
-
-    private void registerListeners() {
-        try {
-            // 인첸트북 우클릭 리스너
-            getServer().getPluginManager().registerEvents(new EnchantBookListener(this), this);
-
-            // 플레이어 접속 리스너
+            // 기본 리스너들
             getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
+            getServer().getPluginManager().registerEvents(new EnchantBookListener(this), this);
+            getServer().getPluginManager().registerEvents(new CustomEnchantListener(this), this);
+            getServer().getPluginManager().registerEvents(new ProtectionScrollListener(this), this);
 
-            // 커스텀 인첸트 리스너
-            getServer().getPluginManager().registerEvents(customEnchantManager, this);
-
-            // 파괴방지권 리스너 (새로 추가)
-            getServer().getPluginManager().registerEvents(protectionScrollManager, this);
-
-            // 모루 인첸트 적용 리스너 (새로 추가)
+            // 모루 인첸트 리스너 (조건부)
             if (anvilEnchantManager != null) {
-                getServer().getPluginManager().registerEvents(anvilEnchantManager, this);
-                getLogger().info("모루 인첸트 적용 리스너 등록 완료");
+                getServer().getPluginManager().registerEvents(new AnvilEnchantListener(this), this);
             }
 
-            // 인첸트 제한 리스너 (모루 리스너 다음에 등록)
-            getServer().getPluginManager().registerEvents(enchantRestrictionManager, this);
-
-            // 커스텀 인첸트 주기적 효과 시작
-            customEnchantManager.startPeriodicEffects();
+            // JobExperienceManager는 자체적으로 이벤트를 등록함 (생성자에서)
 
             getLogger().info("이벤트 리스너 등록 완료");
 
         } catch (Exception e) {
-            getLogger().warning("리스너 등록 중 오류: " + e.getMessage());
+            getLogger().severe("이벤트 리스너 등록 실패: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     // Getter 메소드들
-    public static GGMCore getInstance() {
-        return instance;
-    }
-
-    public ServerDetector getServerDetector() {
-        return serverDetector;
-    }
-
-    public DatabaseManager getDatabaseManager() {
-        return databaseManager;
-    }
-
-    public EconomyManager getEconomyManager() {
-        return economyManager;
-    }
-
-    public EnchantBookManager getEnchantBookManager() {
-        return enchantBookManager;
-    }
-
-    public EnchantRestrictionManager getEnchantRestrictionManager() {
-        return enchantRestrictionManager;
-    }
-
-    public CustomEnchantManager getCustomEnchantManager() {
-        return customEnchantManager;
-    }
-
-    /**
-     * 모루 인첸트 매니저 (null일 수 있음)
-     */
-    public AnvilEnchantManager getAnvilEnchantManager() {
-        return anvilEnchantManager;
-    }
-
-    /**
-     * 파괴방지권 매니저
-     */
-    public ProtectionScrollManager getProtectionScrollManager() {
-        return protectionScrollManager;
-    }
-
-    /**
-     * 모루 인첸트 적용이 활성화되어 있는지 확인
-     */
-    public boolean isAnvilEnchantingEnabled() {
-        return anvilEnchantManager != null && getConfig().getBoolean("anvil_enchanting.enabled", true);
-    }
-
-    /**
-     * 인벤토리 매니저 (null일 수 있음)
-     */
-    public InventoryManager getInventoryManager() {
-        return inventoryManager;
-    }
-
-    /**
-     * 인벤토리 동기화가 활성화되어 있는지 확인
-     */
-    public boolean isInventorySyncEnabled() {
-        return inventoryManager != null && getConfig().getBoolean("inventory_sync.enabled", false);
-    }
-
-    public ScoreboardManager getScoreboardManager() {
-        return scoreboardManager;
-    }
-
-    // 안전한 설정 가져오기 메소드들
-    public String getSafeConfigString(String path, String defaultValue) {
-        try {
-            return getConfig().getString(path, defaultValue);
-        } catch (Exception e) {
-            getLogger().warning("설정 읽기 실패: " + path + ", 기본값 사용: " + defaultValue);
-            return defaultValue;
-        }
-    }
-
-    public int getSafeConfigInt(String path, int defaultValue) {
-        try {
-            return getConfig().getInt(path, defaultValue);
-        } catch (Exception e) {
-            getLogger().warning("설정 읽기 실패: " + path + ", 기본값 사용: " + defaultValue);
-            return defaultValue;
-        }
-    }
-
-    public boolean getSafeConfigBoolean(String path, boolean defaultValue) {
-        try {
-            return getConfig().getBoolean(path, defaultValue);
-        } catch (Exception e) {
-            getLogger().warning("설정 읽기 실패: " + path + ", 기본값 사용: " + defaultValue);
-            return defaultValue;
-        }
-    }
+    public DatabaseManager getDatabaseManager() { return databaseManager; }
+    public EconomyManager getEconomyManager() { return economyManager; }
+    public ScoreboardManager getScoreboardManager() { return scoreboardManager; }
+    public InventoryManager getInventoryManager() { return inventoryManager; }
+    public EnchantBookManager getEnchantBookManager() { return enchantBookManager; }
+    public CustomEnchantManager getCustomEnchantManager() { return customEnchantManager; }
+    public EnchantRestrictionManager getEnchantRestrictionManager() { return enchantRestrictionManager; }
+    public ProtectionScrollManager getProtectionScrollManager() { return protectionScrollManager; }
+    public AnvilEnchantManager getAnvilEnchantManager() { return anvilEnchantManager; }
+    public JobExperienceManager getJobExperienceManager() { return jobExperienceManager; }
+    public ServerDetector getServerDetector() { return serverDetector; }
 }
