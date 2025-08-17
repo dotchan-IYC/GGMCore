@@ -49,24 +49,24 @@ public class EnchantConfigCommand implements CommandExecutor {
         sender.sendMessage("§6=== 커스텀 인첸트 설정 ===");
 
         // 번개 인첸트
-        sender.sendMessage("§e⚡ 번개:");
+        sender.sendMessage("§e번개:");
         sender.sendMessage("  §7기본 확률: §f" + plugin.getConfig().getInt("custom_enchants.lightning.base_chance", 5) + "%");
         sender.sendMessage("  §7레벨당: §f+" + plugin.getConfig().getInt("custom_enchants.lightning.chance_per_level", 5) + "%");
         sender.sendMessage("  §7최대 확률: §f" + plugin.getConfig().getInt("custom_enchants.lightning.max_chance", 25) + "%");
 
         // 자동수리 인첸트
-        sender.sendMessage("§b🔧 자동수리:");
+        sender.sendMessage("§b자동수리:");
         sender.sendMessage("  §7기본 확률: §f" + plugin.getConfig().getInt("custom_enchants.auto_repair.base_chance", 3) + "%");
         sender.sendMessage("  §7레벨당: §f+" + plugin.getConfig().getInt("custom_enchants.auto_repair.chance_per_level", 3) + "%");
         sender.sendMessage("  §7최대 확률: §f" + plugin.getConfig().getInt("custom_enchants.auto_repair.max_chance", 15) + "%");
 
         // 흡혈 인첸트
-        sender.sendMessage("§c🧛 흡혈:");
+        sender.sendMessage("§c흡혈:");
         sender.sendMessage("  §7기본 회복: §f" + plugin.getConfig().getDouble("custom_enchants.vampire.heal_percentage", 10.0) + "%");
         sender.sendMessage("  §7레벨당: §f+" + plugin.getConfig().getDouble("custom_enchants.vampire.heal_per_level", 10.0) + "%");
 
         // 경험증폭 인첸트
-        sender.sendMessage("§d💎 경험증폭:");
+        sender.sendMessage("§d경험증폭:");
         sender.sendMessage("  §7기본 경험치: §f+" + plugin.getConfig().getInt("custom_enchants.exp_boost.base_exp", 2));
         sender.sendMessage("  §7레벨당: §f+" + plugin.getConfig().getInt("custom_enchants.exp_boost.exp_per_level", 2));
 

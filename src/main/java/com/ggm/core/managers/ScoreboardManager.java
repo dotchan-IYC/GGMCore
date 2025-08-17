@@ -27,6 +27,7 @@ public class ScoreboardManager {
     private Plugin ggmSurvival;
     private Object jobManager;
     private Method getPlayerJobMethod;
+    private Method getJobLevelMethod;
     private boolean jobSystemAvailable = false;
 
     public ScoreboardManager(GGMCore plugin) {
@@ -57,9 +58,10 @@ public class ScoreboardManager {
                 jobManager = getJobManagerMethod.invoke(ggmSurvival);
 
                 if (jobManager != null) {
-                    // getPlayerJob 메소드 가져오기
+                    // 필요한 메소드들 가져오기
                     Class<?> jobManagerClass = jobManager.getClass();
                     getPlayerJobMethod = jobManagerClass.getMethod("getCachedJob", UUID.class);
+                    getJobLevelMethod = jobManagerClass.getMethod("getJobLevel", org.bukkit.entity.Player.class);
 
                     jobSystemAvailable = true;
                     plugin.getLogger().info("GGMSurvival 직업 시스템과 연동되었습니다!");
@@ -74,21 +76,51 @@ public class ScoreboardManager {
     }
 
     /**
-     * 플레이어의 직업 정보 가져오기
+     * 직업 시스템 재연동 시도 (GGMSurvival에서 호출)
      */
-    private String getPlayerJobDisplay(Player player) {
-        if (!jobSystemAvailable || jobManager == null || getPlayerJobMethod == null) {
-            return "§7직업 없음";
+    public void retryJobSystemIntegration() {
+        initializeJobSystemIntegration();
+
+        // 이미 접속한 플레이어들의 스코어보드 업데이트
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            updateScoreboard(player);
+        }
+    }
+
+    /**
+     * 플레이어 직업 정보 가져오기 (캐시된 버전)
+     */
+    private String getPlayerJobInfo(Player player) {
+        // 야생 서버가 아니면 직업 정보를 표시하지 않음
+        if (!plugin.getServerDetector().isSurvival()) {
+            return null; // 직업 정보 숨김
+        }
+
+        if (!jobSystemAvailable || jobManager == null) {
+            return "§7직업 시스템 없음";
         }
 
         try {
-            Object jobType = getPlayerJobMethod.invoke(jobManager, player.getUniqueId());
+            Object jobData = getPlayerJobMethod.invoke(jobManager, player.getUniqueId());
 
-            if (jobType != null) {
-                // JobType enum의 getDisplayName() 메소드 호출
-                Method getDisplayNameMethod = jobType.getClass().getMethod("getDisplayName");
-                String displayName = (String) getDisplayNameMethod.invoke(jobType);
-                return displayName != null ? displayName : "§7직업 없음";
+            if (jobData != null && !jobData.toString().equals("NONE")) {
+                // JobType enum의 메소드들 호출
+                Method getDisplayNameMethod = jobData.getClass().getMethod("getDisplayName");
+                Method getColorMethod = jobData.getClass().getMethod("getColor");
+
+                String jobName = (String) getDisplayNameMethod.invoke(jobData);
+                String jobColor = (String) getColorMethod.invoke(jobData);
+
+                // 레벨 정보 가져오기
+                int level = (Integer) getJobLevelMethod.invoke(jobManager, player);
+
+                if (level >= 10) {
+                    return jobColor + "★" + jobName + " §6만렙";
+                } else {
+                    return jobColor + jobName + " §fLv." + level;
+                }
+            } else {
+                return "§7직업 없음";
             }
         } catch (Exception e) {
             plugin.getLogger().warning("직업 정보 조회 실패 (" + player.getName() + "): " + e.getMessage());
@@ -127,32 +159,47 @@ public class ScoreboardManager {
     }
 
     /**
-     * 고정 스코어보드 구조 설정 (깜빡거림 방지)
+     * 고정 스코어보드 구조 설정 (깜빡거림 방지) - 서버별 다른 구조
      */
     private void setupFixedScoreboard(Player player, Objective objective) {
         UUID uuid = player.getUniqueId();
         Map<String, String> entries = fixedEntries.get(uuid);
 
+        boolean isSurvival = plugin.getServerDetector().isSurvival();
+
         // 고정 위치에 빈 엔트리들 생성
         entries.put("blank_top", "§f");
         entries.put("player_name", "§e플레이어: §f" + player.getName());
         entries.put("balance", "§a보유 G: §6로딩중...");
-        entries.put("job", "§b직업: §7로딩중...");
-        entries.put("blank_mid", "§7");
+
+        // 야생 서버에서만 직업 정보 표시
+        if (isSurvival) {
+            entries.put("job", "§b직업: §7로딩중...");
+            entries.put("blank_mid", "§7");
+        } else {
+            entries.put("blank_mid", "§7");
+        }
+
         entries.put("server", "§d서버: §f" + getServerName());
         entries.put("online", "§c온라인: §f" + Bukkit.getOnlinePlayers().size() + "명");
         entries.put("blank_mid2", "§8");
         entries.put("time", "§7시간: §f" + timeFormat.format(new Date()));
         entries.put("blank_bottom", "§9");
         entries.put("separator", "§6§l━━━━━━━━━━━━━━");
-        entries.put("website", "§7ggm.server.com");
+        entries.put("website", "§7gyeonggigamemeisterhighschool.duckdns.org");
 
-        // 고정 스코어 설정 (위에서부터 아래로)
-        int score = 11;
+        // 고정 스코어 설정 (위에서부터 아래로) - 서버별 다른 배치
+        int score = isSurvival ? 12 : 11; // 야생 서버는 직업 정보 때문에 한 줄 더
+
         objective.getScore(entries.get("blank_top")).setScore(score--);
         objective.getScore(entries.get("player_name")).setScore(score--);
         objective.getScore(entries.get("balance")).setScore(score--);
-        objective.getScore(entries.get("job")).setScore(score--);
+
+        // 야생 서버에서만 직업 정보 추가
+        if (isSurvival) {
+            objective.getScore(entries.get("job")).setScore(score--);
+        }
+
         objective.getScore(entries.get("blank_mid")).setScore(score--);
         objective.getScore(entries.get("server")).setScore(score--);
         objective.getScore(entries.get("online")).setScore(score--);
@@ -164,43 +211,52 @@ public class ScoreboardManager {
     }
 
     /**
-     * 스코어보드 내용만 업데이트 (위치 고정, 깜빡거림 없음)
+     * 스코어보드 내용 업데이트 - 서버별 다른 내용
      */
     private void updateScoreboardContent(Player player, Objective objective) {
-        if (!player.isOnline()) return;
-
         UUID uuid = player.getUniqueId();
         Map<String, String> entries = fixedEntries.get(uuid);
         if (entries == null) return;
 
-        // G 잔액 비동기로 가져와서 업데이트
+        boolean isSurvival = plugin.getServerDetector().isSurvival();
+
+        // G 잔액 업데이트 (비동기)
         economyManager.getBalance(uuid).thenAccept(balance -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
-                if (!player.isOnline()) return;
-
-                // 잔액 업데이트
                 updateScoreEntry(objective, entries, "balance",
-                        "§a보유 G: §6" + economyManager.formatMoney(balance) + "G", 9);
-
-                // 직업 정보 업데이트
-                String jobDisplay = getPlayerJobDisplay(player);
-                updateScoreEntry(objective, entries, "job",
-                        "§b직업: " + jobDisplay, 8);
-
-                // 온라인 인원 수 업데이트
-                updateScoreEntry(objective, entries, "online",
-                        "§c온라인: §f" + Bukkit.getOnlinePlayers().size() + "명", 5);
+                        "§a보유 G: §6" + economyManager.formatMoney(balance) + "G",
+                        isSurvival ? 10 : 9);
             });
         }).exceptionally(throwable -> {
-            plugin.getLogger().warning("잔액 조회 실패: " + throwable.getMessage());
+            plugin.getLogger().warning("잔액 조회 실패 (" + uuid + "): " + throwable.getMessage());
             return null;
         });
+
+        // 야생 서버에서만 직업 정보 업데이트
+        if (isSurvival) {
+            String jobInfo = getPlayerJobInfo(player);
+            if (jobInfo != null) {
+                updateScoreEntry(objective, entries, "job",
+                        "§b직업: " + jobInfo, 9);
+            }
+        }
+
+        // 온라인 인원 수 업데이트
+        updateScoreEntry(objective, entries, "online",
+                "§c온라인: §f" + Bukkit.getOnlinePlayers().size() + "명",
+                isSurvival ? 6 : 7);
+
+        // 시간 업데이트
+        String currentTime = timeFormat.format(new Date());
+        updateScoreEntry(objective, entries, "time",
+                "§7시간: §f" + currentTime,
+                isSurvival ? 4 : 5);
     }
 
     /**
-     * 시간만 업데이트 (1초마다, 깜빡거림 없음)
+     * 시간만 업데이트 (성능 최적화)
      */
-    public void updateTimeOnly(Player player) {
+    private void updateTimeOnly(Player player) {
         if (!player.isOnline()) return;
 
         UUID uuid = player.getUniqueId();
@@ -213,10 +269,13 @@ public class ScoreboardManager {
         Map<String, String> entries = fixedEntries.get(uuid);
         if (entries == null) return;
 
+        boolean isSurvival = plugin.getServerDetector().isSurvival();
+
         // 시간만 업데이트 (고정 위치)
         String currentTime = timeFormat.format(new Date());
         updateScoreEntry(objective, entries, "time",
-                "§7시간: §f" + currentTime, 3);
+                "§7시간: §f" + currentTime,
+                isSurvival ? 4 : 5);
     }
 
     /**
@@ -275,30 +334,65 @@ public class ScoreboardManager {
     }
 
     /**
+     * 동기적으로 잔액을 가져오는 헬퍼 메소드 (스코어보드용)
+     */
+    private long getBalanceSync(UUID uuid) {
+        try {
+            return economyManager.getBalance(uuid).get();
+        } catch (Exception e) {
+            plugin.getLogger().warning("동기 잔액 조회 실패 (" + uuid + "): " + e.getMessage());
+            return 0L;
+        }
+    }
+    public void updatePlayerBalance(UUID uuid) {
+        Player player = Bukkit.getPlayer(uuid);
+        if (player != null && player.isOnline()) {
+            updateScoreboard(player);
+        }
+    }
+
+    /**
      * 모든 플레이어의 온라인 인원 수 업데이트
      */
     public void updateOnlineCount() {
         for (Player player : Bukkit.getOnlinePlayers()) {
             UUID uuid = player.getUniqueId();
-            if (playerScoreboards.containsKey(uuid)) {
-                Objective objective = playerScoreboards.get(uuid).getObjective("ggm_info");
-                Map<String, String> entries = fixedEntries.get(uuid);
+            Objective objective = playerScoreboards.get(uuid) != null ?
+                    playerScoreboards.get(uuid).getObjective("ggm_info") : null;
+            Map<String, String> entries = fixedEntries.get(uuid);
 
-                if (objective != null && entries != null) {
-                    updateScoreEntry(objective, entries, "online",
-                            "§c온라인: §f" + Bukkit.getOnlinePlayers().size() + "명", 5);
-                }
+            if (objective != null && entries != null) {
+                boolean isSurvival = plugin.getServerDetector().isSurvival();
+                updateScoreEntry(objective, entries, "online",
+                        "§c온라인: §f" + Bukkit.getOnlinePlayers().size() + "명",
+                        isSurvival ? 6 : 7);
             }
         }
     }
 
     /**
-     * 특정 플레이어의 G 잔액 변경 시 스코어보드 즉시 업데이트
+     * 플레이어 잔액 변경 시 스코어보드 업데이트 (실시간)
      */
-    public void updatePlayerBalance(UUID uuid) {
-        Player player = Bukkit.getPlayer(uuid);
-        if (player != null && player.isOnline()) {
-            updateScoreboard(player);
+    public void updateBalance(Player player, long newBalance, long change) {
+        UUID uuid = player.getUniqueId();
+        Objective objective = playerScoreboards.get(uuid) != null ?
+                playerScoreboards.get(uuid).getObjective("ggm_info") : null;
+        Map<String, String> entries = fixedEntries.get(uuid);
+
+        if (objective != null && entries != null) {
+            boolean isSurvival = plugin.getServerDetector().isSurvival();
+            updateScoreEntry(objective, entries, "balance",
+                    "§a보유 G: §6" + economyManager.formatMoney(newBalance) + "G",
+                    isSurvival ? 10 : 9);
+        }
+
+        // 큰 금액 변동시 추가 효과
+        if (Math.abs(change) >= 10000) { // 1만G 이상 변동
+            if (change > 0) {
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.8f, 1.2f);
+            } else {
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ITEM_BREAK, 0.5f, 0.8f);
+            }
         }
     }
 
@@ -336,24 +430,7 @@ public class ScoreboardManager {
         sendActionBar(player, actionMessage);
 
         // 스코어보드 즉시 업데이트 (잔액만)
-        UUID uuid = player.getUniqueId();
-        Objective objective = playerScoreboards.get(uuid) != null ?
-                playerScoreboards.get(uuid).getObjective("ggm_info") : null;
-        Map<String, String> entries = fixedEntries.get(uuid);
-
-        if (objective != null && entries != null) {
-            updateScoreEntry(objective, entries, "balance",
-                    "§a보유 G: §6" + economyManager.formatMoney(newBalance) + "G", 9);
-        }
-
-        // 큰 금액 변동시 추가 효과
-        if (Math.abs(change) >= 10000) { // 1만G 이상 변동
-            if (change > 0) {
-                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.8f, 1.2f);
-            } else {
-                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ITEM_BREAK, 0.5f, 0.8f);
-            }
-        }
+        updateBalance(player, newBalance, change);
     }
 
     /**
@@ -393,33 +470,26 @@ public class ScoreboardManager {
             }
         }, 0L, 600L); // 30초마다 (600틱)
 
-        plugin.getLogger().info("스코어보드 시스템 활성화 - 깜빡거림 방지 모드");
+        plugin.getLogger().info("스코어보드 시스템 활성화 - 서버별 맞춤 표시");
     }
 
     /**
-     * 직업이 변경되었을 때 스코어보드 업데이트
+     * 직업이 변경되었을 때 스코어보드 업데이트 (야생 서버에서만)
      */
     public void updateJobInfo(Player player) {
-        if (player.isOnline()) {
+        if (player.isOnline() && plugin.getServerDetector().isSurvival()) {
             UUID uuid = player.getUniqueId();
             Objective objective = playerScoreboards.get(uuid) != null ?
                     playerScoreboards.get(uuid).getObjective("ggm_info") : null;
             Map<String, String> entries = fixedEntries.get(uuid);
 
             if (objective != null && entries != null) {
-                String jobDisplay = getPlayerJobDisplay(player);
-                updateScoreEntry(objective, entries, "job",
-                        "§b직업: " + jobDisplay, 8);
+                String jobInfo = getPlayerJobInfo(player);
+                if (jobInfo != null) {
+                    updateScoreEntry(objective, entries, "job",
+                            "§b직업: " + jobInfo, 9);
+                }
             }
-        }
-    }
-
-    /**
-     * 직업 시스템 연동 재시도 (GGMSurvival이 나중에 로드되는 경우)
-     */
-    public void retryJobSystemIntegration() {
-        if (!jobSystemAvailable) {
-            initializeJobSystemIntegration();
         }
     }
 
@@ -432,5 +502,7 @@ public class ScoreboardManager {
         }
         playerScoreboards.clear();
         fixedEntries.clear();
+
+        plugin.getLogger().info("스코어보드 매니저 정리 완료");
     }
 }

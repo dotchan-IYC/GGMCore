@@ -267,7 +267,7 @@ public class CustomEnchantManager implements Listener {
         // 시각 효과
         centerBlock.getWorld().spawnParticle(Particle.EXPLOSION_NORMAL,
                 centerBlock.getLocation().add(0.5, 0.5, 0.5), 10);
-        player.sendMessage("§8⛏️ 광역채굴 발동!");
+        player.sendMessage("§8광역채굴 발동!");
     }
 
     /**

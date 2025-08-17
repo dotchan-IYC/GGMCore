@@ -44,7 +44,7 @@ public class BalanceCommand implements CommandExecutor {
             economyManager.getBalance(targetPlayer.getUniqueId()).thenAccept(balance -> {
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     player.sendMessage("§6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-                    player.sendMessage("§e§l💰 " + targetPlayer.getName() + "님의 G 잔액");
+                    player.sendMessage("§e§l" + targetPlayer.getName() + "님의 G 잔액");
                     player.sendMessage("");
                     player.sendMessage("§a보유 G: §6" + economyManager.formatMoney(balance) + "G");
                     player.sendMessage("§6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -63,19 +63,19 @@ public class BalanceCommand implements CommandExecutor {
         economyManager.getBalance(player.getUniqueId()).thenAccept(balance -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 player.sendMessage("§6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-                player.sendMessage("§e§l💰 내 G 잔액");
+                player.sendMessage("§e§l내 G 잔액");
                 player.sendMessage("");
                 player.sendMessage("§a보유 G: §6" + economyManager.formatMoney(balance) + "G");
 
                 // 잔액에 따른 추가 정보
                 if (balance >= 1000000) {
-                    player.sendMessage("§d§l✨ 백만장자! ✨");
+                    player.sendMessage("§d§l백만장자!");
                 } else if (balance >= 100000) {
-                    player.sendMessage("§6§l💎 부자이시네요!");
+                    player.sendMessage("§6§l부자이시네요!");
                 } else if (balance >= 10000) {
-                    player.sendMessage("§b§l💰 재정이 안정적입니다!");
+                    player.sendMessage("§b§l재정이 안정적입니다!");
                 } else if (balance < 1000) {
-                    player.sendMessage("§c§l🆘 G가 부족합니다!");
+                    player.sendMessage("§c§lG가 부족합니다!");
                 }
 
                 player.sendMessage("");
@@ -83,7 +83,7 @@ public class BalanceCommand implements CommandExecutor {
                 player.sendMessage("§6━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
                 // ActionBar로도 표시
-                player.sendActionBar("§6💰 G: " + economyManager.formatMoney(balance) + "G");
+                player.sendActionBar("§6G: " + economyManager.formatMoney(balance) + "G");
             });
         }).exceptionally(throwable -> {
             Bukkit.getScheduler().runTask(plugin, () -> {

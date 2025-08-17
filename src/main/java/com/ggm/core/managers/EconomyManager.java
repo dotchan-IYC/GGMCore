@@ -20,7 +20,7 @@ public class EconomyManager {
     /**
      * 스코어보드 업데이트 (G 변경 시 호출)
      */
-    private void updateScoreboardForPlayer(UUID uuid) {
+    private void updatePlayerBalance(UUID uuid) {
         try {
             if (plugin.getScoreboardManager() != null) {
                 plugin.getScoreboardManager().updatePlayerBalance(uuid);
@@ -44,10 +44,13 @@ public class EconomyManager {
                             plugin.getScoreboardManager().notifyBalanceChange(player, newBalance, change);
                         }
                     });
+                }).exceptionally(throwable -> {
+                    plugin.getLogger().warning("잔액 조회 실패: " + throwable.getMessage());
+                    return null;
                 });
             } else {
                 // 플레이어가 오프라인이면 스코어보드만 업데이트
-                updateScoreboardForPlayer(uuid);
+                updatePlayerBalance(uuid);
             }
         } catch (Exception e) {
             plugin.getLogger().warning("잔액 변경 알림 실패: " + e.getMessage());
@@ -70,6 +73,18 @@ public class EconomyManager {
 
     /**
      * 플레이어 잔액 조회 (동기)
+     */
+    public long getBalanceSync(UUID uuid) {
+        try {
+            return getBalance(uuid).get();
+        } catch (Exception e) {
+            plugin.getLogger().warning("동기 잔액 조회 실패: " + e.getMessage());
+            return 0L;
+        }
+    }
+
+    /**
+     * 플레이어 잔액 조회 (Player 오버로드)
      */
     public CompletableFuture<Long> getBalance(Player player) {
         return getBalance(player.getUniqueId());
@@ -154,7 +169,7 @@ public class EconomyManager {
             return CompletableFuture.completedFuture(new TransferResult(false, "자기 자신에게 송금할 수 없습니다."));
         }
 
-        long maxTransfer = plugin.getConfig().getLong("economy.max_transfer");
+        long maxTransfer = plugin.getConfig().getLong("economy.max_transfer", 1000000);
         if (amount > maxTransfer) {
             return CompletableFuture.completedFuture(new TransferResult(false, "최대 송금 가능 금액은 " + formatMoney(maxTransfer) + "G입니다."));
         }
@@ -260,17 +275,7 @@ public class EconomyManager {
     public void sendMessage(Player player, String key, Object... args) {
         String prefix = plugin.getConfig().getString("messages.prefix", "§6[GGM] §f");
         String message = plugin.getConfig().getString("messages." + key, "메시지를 찾을 수 없습니다.");
-
-        // 플레이스홀더 치환
-        for (int i = 0; i < args.length; i += 2) {
-            if (i + 1 < args.length) {
-                String placeholder = "{" + args[i] + "}";
-                String value = String.valueOf(args[i + 1]);
-                message = message.replace(placeholder, value);
-            }
-        }
-
-        player.sendMessage(prefix + message);
+        player.sendMessage(prefix + String.format(message, args));
     }
 
     /**

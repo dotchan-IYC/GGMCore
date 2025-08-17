@@ -22,21 +22,21 @@ public class ServerDetector {
 
         // BungeeCord 설정과 일치하는 포트 매핑
         switch (port) {
-            case 25565:
+            case 25577:
                 serverType = "lobby";
-                serverDisplayName = "🏠 로비";
+                serverDisplayName = "로비";
                 break;
             case 25566:
                 serverType = "build";
-                serverDisplayName = "🏗️ 건축";
+                serverDisplayName = "건축";
                 break;
             case 25567:
                 serverType = "survival";
-                serverDisplayName = "⚔️ 야생";
+                serverDisplayName = "야생";
                 break;
             case 25568:
                 serverType = "village";
-                serverDisplayName = "🏘️ 마을";
+                serverDisplayName = "마을";
                 break;
             default:
                 // 알 수 없는 포트인 경우 설정 파일에서 가져오기

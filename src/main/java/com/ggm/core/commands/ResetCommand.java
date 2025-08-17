@@ -82,44 +82,80 @@ public class ResetCommand implements CommandExecutor {
         plugin.getLogger().info(String.format("[전체 초기화] %s이(가) %s의 모든 데이터 초기화를 시작했습니다.",
                 sender.getName(), playerName));
 
-        // 1. 인벤토리 초기화
-        inventoryManager.deletePlayerInventory(uuid)
-                .thenCompose(invSuccess -> {
-                    sender.sendMessage("[전체 초기화] 인벤토리 데이터 삭제: " + (invSuccess ? "성공" : "실패"));
+        // 1. 인벤토리 초기화 (inventoryManager가 null이 아닌 경우에만)
+        if (inventoryManager != null) {
+            inventoryManager.deletePlayerInventory(uuid)
+                    .thenCompose(invSuccess -> {
+                        sender.sendMessage("[전체 초기화] 인벤토리 데이터 삭제: " + (invSuccess ? "성공" : "실패"));
 
-                    // 2. 경제 데이터 초기화
-                    long startingMoney = plugin.getConfig().getLong("economy.starting_money", 1000L);
-                    return economyManager.setBalance(uuid, startingMoney);
-                })
-                .thenAccept(ecoSuccess -> {
-                    sender.sendMessage("[전체 초기화] 경제 데이터 초기화: " + (ecoSuccess ? "성공" : "실패"));
+                        // 2. 경제 데이터 초기화
+                        long startingMoney = plugin.getConfig().getLong("economy.starting_money", 1000L);
+                        return economyManager.setBalance(uuid, startingMoney);
+                    })
+                    .thenAccept(ecoSuccess -> {
+                        sender.sendMessage("[전체 초기화] 경제 데이터 초기화: " + (ecoSuccess ? "성공" : "실패"));
 
-                    // 3. 현재 게임 상태 초기화 (메인 스레드에서)
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        clearPlayerState(targetPlayer);
+                        // 3. 현재 게임 상태 초기화 (메인 스레드에서)
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            clearPlayerState(targetPlayer);
 
-                        targetPlayer.sendMessage("===========================");
-                        targetPlayer.sendMessage("관리자에 의해 계정이 완전 초기화되었습니다.");
-                        targetPlayer.sendMessage("새로운 플레이어처럼 다시 시작됩니다!");
-                        targetPlayer.sendMessage("===========================");
+                            targetPlayer.sendMessage("===========================");
+                            targetPlayer.sendMessage("관리자에 의해 계정이 완전 초기화되었습니다.");
+                            targetPlayer.sendMessage("새로운 플레이어처럼 다시 시작됩니다!");
+                            targetPlayer.sendMessage("===========================");
 
-                        sender.sendMessage("[전체 초기화] " + playerName + "의 모든 데이터가 초기화되었습니다.");
-                        sender.sendMessage("플레이어가 서버를 재접속하면 신규 플레이어로 처리됩니다.");
+                            sender.sendMessage("[전체 초기화] " + playerName + "의 모든 데이터가 초기화되었습니다.");
+                            sender.sendMessage("플레이어가 서버를 재접속하면 신규 플레이어로 처리됩니다.");
 
-                        // 스코어보드 업데이트
-                        plugin.getScoreboardManager().updatePlayerBalance(uuid);
+                            // 스코어보드 업데이트
+                            if (plugin.getScoreboardManager() != null) {
+                                plugin.getScoreboardManager().updatePlayerBalance(uuid);
+                            }
 
-                        plugin.getLogger().info(String.format("[전체 초기화] %s의 모든 데이터 초기화 완료 (by %s)",
-                                playerName, sender.getName()));
+                            plugin.getLogger().info(String.format("[전체 초기화] %s의 모든 데이터 초기화 완료 (by %s)",
+                                    playerName, sender.getName()));
+                        });
+                    })
+                    .exceptionally(throwable -> {
+                        sender.sendMessage("[전체 초기화] 오류 발생: " + throwable.getMessage());
+                        plugin.getLogger().severe(String.format("[전체 초기화] %s 초기화 중 오류: %s",
+                                playerName, throwable.getMessage()));
+                        throwable.printStackTrace();
+                        return null;
                     });
-                })
-                .exceptionally(throwable -> {
-                    sender.sendMessage("[전체 초기화] 오류 발생: " + throwable.getMessage());
-                    plugin.getLogger().severe(String.format("[전체 초기화] %s 초기화 중 오류: %s",
-                            playerName, throwable.getMessage()));
-                    throwable.printStackTrace();
-                    return null;
-                });
+        } else {
+            // 인벤토리 매니저가 없는 경우 경제 데이터만 초기화
+            long startingMoney = plugin.getConfig().getLong("economy.starting_money", 1000L);
+            economyManager.setBalance(uuid, startingMoney)
+                    .thenAccept(ecoSuccess -> {
+                        sender.sendMessage("[전체 초기화] 경제 데이터 초기화: " + (ecoSuccess ? "성공" : "실패"));
+
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            clearPlayerState(targetPlayer);
+
+                            targetPlayer.sendMessage("===========================");
+                            targetPlayer.sendMessage("관리자에 의해 계정이 초기화되었습니다.");
+                            targetPlayer.sendMessage("새로운 플레이어처럼 다시 시작됩니다!");
+                            targetPlayer.sendMessage("===========================");
+
+                            sender.sendMessage("[전체 초기화] " + playerName + "의 데이터가 초기화되었습니다.");
+
+                            // 스코어보드 업데이트
+                            if (plugin.getScoreboardManager() != null) {
+                                plugin.getScoreboardManager().updatePlayerBalance(uuid);
+                            }
+
+                            plugin.getLogger().info(String.format("[전체 초기화] %s의 데이터 초기화 완료 (by %s)",
+                                    playerName, sender.getName()));
+                        });
+                    })
+                    .exceptionally(throwable -> {
+                        sender.sendMessage("[전체 초기화] 오류 발생: " + throwable.getMessage());
+                        plugin.getLogger().severe(String.format("[전체 초기화] %s 초기화 중 오류: %s",
+                                playerName, throwable.getMessage()));
+                        return null;
+                    });
+        }
     }
 
     /**
@@ -128,6 +164,11 @@ public class ResetCommand implements CommandExecutor {
     private void resetInventory(CommandSender sender, Player targetPlayer) {
         UUID uuid = targetPlayer.getUniqueId();
         String playerName = targetPlayer.getName();
+
+        if (inventoryManager == null) {
+            sender.sendMessage("[인벤토리 초기화] 인벤토리 시스템이 비활성화되어 있습니다.");
+            return;
+        }
 
         sender.sendMessage("[인벤토리 초기화] " + playerName + "의 인벤토리를 초기화 중...");
 
@@ -176,7 +217,9 @@ public class ResetCommand implements CommandExecutor {
                                 economyManager.formatMoney(startingMoney) + "G로 초기화되었습니다.");
 
                         // 스코어보드 업데이트
-                        plugin.getScoreboardManager().updatePlayerBalance(uuid);
+                        if (plugin.getScoreboardManager() != null) {
+                            plugin.getScoreboardManager().updatePlayerBalance(uuid);
+                        }
                     } else {
                         sender.sendMessage("[경제 초기화] " + playerName + "의 경제 데이터 초기화에 실패했습니다.");
                     }
@@ -191,31 +234,36 @@ public class ResetCommand implements CommandExecutor {
      * 플레이어 게임 상태 완전 초기화
      */
     private void clearPlayerState(Player player) {
-        // 인벤토리 비우기
-        player.getInventory().clear();
-        player.getInventory().setArmorContents(null);
+        try {
+            // 인벤토리 비우기
+            player.getInventory().clear();
+            player.getInventory().setArmorContents(null);
 
-        // 상태 초기화
-        player.setHealth(player.getMaxHealth());
-        player.setFoodLevel(20);
-        player.setSaturation(5.0f);
-        player.setExhaustion(0.0f);
+            // 상태 초기화
+            player.setHealth(player.getMaxHealth());
+            player.setFoodLevel(20);
+            player.setSaturation(5.0f);
+            player.setExhaustion(0.0f);
 
-        // 경험치 초기화
-        player.setLevel(0);
-        player.setExp(0.0f);
-        player.setTotalExperience(0);
+            // 경험치 초기화
+            player.setLevel(0);
+            player.setExp(0.0f);
+            player.setTotalExperience(0);
 
-        // 포션 효과 제거
-        player.getActivePotionEffects().forEach(effect ->
-                player.removePotionEffect(effect.getType()));
+            // 포션 효과 제거
+            player.getActivePotionEffects().forEach(effect ->
+                    player.removePotionEffect(effect.getType()));
 
-        // 게임 모드를 기본값으로 (설정에 따라)
-        if (plugin.getConfig().getBoolean("reset.set_default_gamemode", false)) {
-            player.setGameMode(org.bukkit.GameMode.SURVIVAL);
+            // 게임 모드를 기본값으로 (설정에 따라)
+            if (plugin.getConfig().getBoolean("reset.set_default_gamemode", false)) {
+                player.setGameMode(org.bukkit.GameMode.SURVIVAL);
+            }
+
+            plugin.getLogger().info(String.format("[상태 초기화] %s의 게임 상태가 완전 초기화되었습니다.",
+                    player.getName()));
+        } catch (Exception e) {
+            plugin.getLogger().warning(String.format("[상태 초기화] %s의 상태 초기화 중 오류: %s",
+                    player.getName(), e.getMessage()));
         }
-
-        plugin.getLogger().info(String.format("[상태 초기화] %s의 게임 상태가 완전 초기화되었습니다.",
-                player.getName()));
     }
 }

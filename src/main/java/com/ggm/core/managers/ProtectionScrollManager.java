@@ -35,7 +35,7 @@ public class ProtectionScrollManager implements Listener {
 
         switch (type.toLowerCase()) {
             case "basic":
-                meta.setDisplayName("§a🛡️ 기본 파괴방지권");
+                meta.setDisplayName("§a기본 파괴방지권");
                 List<String> basicLore = new ArrayList<>();
                 basicLore.add("§7무기에 우클릭하여 적용");
                 basicLore.add("§7인첸트 실패 시 무기 보호");
@@ -47,12 +47,12 @@ public class ProtectionScrollManager implements Listener {
                 break;
 
             case "premium":
-                meta.setDisplayName("§6📜 프리미엄 파괴방지권");
+                meta.setDisplayName("§6프리미엄 파괴방지권");
                 List<String> premiumLore = new ArrayList<>();
                 premiumLore.add("§7무기에 우클릭하여 적용");
                 premiumLore.add("§7인첸트 실패 시 무기 + 인첸트북 보호");
                 premiumLore.add("§b실패 시: 경험치만 소모, 모든 아이템 보존");
-                premiumLore.add("§6§l⭐ 최고급 보장서!");
+                premiumLore.add("§6§l최고급 보장서!");
                 premiumLore.add("§8§l[GGM 파괴방지권]");
                 meta.setLore(premiumLore);
 
@@ -114,11 +114,11 @@ public class ProtectionScrollManager implements Listener {
         applyProtection(targetItem, protectionType);
         item.setAmount(item.getAmount() - 1);
 
-        String protectionName = protectionType.equals("premium") ? "§6📜 프리미엄 파괴방지권" : "§a🛡️ 기본 파괴방지권";
+        String protectionName = protectionType.equals("premium") ? "§6프리미엄 파괴방지권" : "§a기본 파괴방지권";
         player.sendMessage("§a" + protectionName + "이 적용되었습니다!");
 
         if (protectionType.equals("premium")) {
-            player.sendMessage("§6§l⭐ 최고급 보장! §7인첸트 실패 시 모든 아이템이 보호됩니다.");
+            player.sendMessage("§7인첸트 실패 시 모든 아이템이 보호됩니다.");
         } else {
             player.sendMessage("§7이제 인첸트 실패 시 무기가 보호됩니다.");
         }
@@ -161,10 +161,10 @@ public class ProtectionScrollManager implements Listener {
         lore.removeIf(line -> line.contains("파괴방지"));
 
         if (protectionType.equals("premium")) {
-            lore.add("§6📜 프리미엄 파괴방지 적용됨");
+            lore.add("§6프리미엄 파괴방지 적용됨");
             lore.add("§7실패 시: 무기 + 인첸트북 보호");
         } else {
-            lore.add("§a🛡️ 기본 파괴방지 적용됨");
+            lore.add("§a기본 파괴방지 적용됨");
             lore.add("§7실패 시: 무기만 보호");
         }
 
